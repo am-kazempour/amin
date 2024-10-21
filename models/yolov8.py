@@ -14,10 +14,10 @@ class yolov8:
     """
     
     def __init__(self,input_shape=(256,256, 3),type="n"):
-      self.__set_type(type)
-      self.load_backbone()
       self.input_shape = input_shape
       self.input = Input(self.input_shape)
+      self.__set_type(type)
+      self.load_backbone()
       self.__decoder()
     
     def __set_type(self,type):
