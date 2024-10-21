@@ -18,7 +18,7 @@ class yolov8:
     def __init__(self,input_shape=(256,256, 3),type="n",class_num=1):
       self.input_shape = input_shape
       _in = Input(self.input_shape)
-      self.input = _in[None,:,:,:2]
+      self.input = _in[:,:,:,:2]
       self.class_num =class_num
       self.__set_type(type)
       self.load_backbone()
