@@ -18,7 +18,6 @@ class yolov8:
     def __init__(self,input_shape=(256,256, 3),type="n",class_num=1):
       self.input_shape = input_shape
       self.input = Input(self.input_shape)
-      self._in = self.input[:,:,:,:2]
       self.class_num =class_num
       self.__set_type(type)
       self.load_backbone()
@@ -38,7 +37,7 @@ class yolov8:
         
         intermediate_model = tf.keras.models.clone_model(
           backbone_yolo,
-          input_tensors=self.input[:,:,:,:2],
+          input_tensors=self.input,#[:,:,:,:2],
           clone_function=None,
           call_function=None,
           recursive=False,
