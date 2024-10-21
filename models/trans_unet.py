@@ -78,7 +78,7 @@ class trans_unet:
         u9 = layers.Concatenate()([u9, c1])
         c9 = self.conv_block(u9, self.num_filters)
         
-        c9 = layers.Conv2D(self.class_num, (1, 1), activation='sigmoid')(c9)
+        c9 = layers.Conv2D(self.class_num, (1, 1))(c9)
         if self.class_num == 1:
             self.output = layers.Activation('sigmoid')(c9)
         else:
