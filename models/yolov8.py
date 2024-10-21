@@ -38,7 +38,7 @@ class yolov8:
         
         intermediate_model = tf.keras.models.clone_model(
           backbone_yolo,
-          input_tensors=(256,256,2),#self.input,
+          input_tensors=self.input,
           clone_function=None,
           call_function=None,
           recursive=False,
