@@ -9,15 +9,16 @@ import keras
 class yolov8:
     """
     !!! Developed by Amin !!!
-    
+
     install:
       !pip install --upgrade keras-cv
       !pip install --upgrade keras
     """
     
-    def __init__(self,input_shape=(256,256, 3),type="n"):
+    def __init__(self,input_shape=(256,256, 3),type="n",class_num=1):
       self.input_shape = input_shape
       self.input = Input(self.input_shape)
+      self.class_num =class_num
       self.__set_type(type)
       self.load_backbone()
       self.__decoder()
@@ -135,7 +136,10 @@ class yolov8:
         upsampled_512x512 = UpSampling2D(size=(8, 8))(spatial_att_64x64)  
         x = Conv2D(256, (3, 3), padding='same', activation='relu')(upsampled_512x512) 
         x = Conv2D(128, (3, 3), padding='same', activation='relu')(x) 
-        mask = Conv2D(1, (1, 1), padding='same')(x) 
-        mask = Activation('sigmoid')(mask) 
-        
+        mask = Conv2D(self.class_num, (1, 1), padding='same')(x) 
+        if self.class_num == 1:
+            self.output = Activation('sigmoid')(mask)
+        else:
+            self.output = Activation('softmax')(mask)
+      
         return mask
