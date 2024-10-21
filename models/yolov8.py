@@ -63,9 +63,9 @@ class yolov8:
     def c2f(self,inputs,filters, n):
       x_1 = self.conv_block(inputs, filters, kernel_size=1 ,  strides=1, padding='same')
       x_2 = self.conv_block(inputs, filters, kernel_size=1 ,  strides=1, padding='same')
-      x_b = bottle_neck(x_1)
+      x_b = self.bottle_neck(x_1)
       for i in range(n-1):
-        x_b = bottle_neck(x_b)
+        x_b = self.bottle_neck(x_b)
       conc = Concatenate()([x_b, x_2 ])#, axis=3)
       x_out = self.conv_block(conc, filters, kernel_size=1 ,  strides=1, padding='valid')
 
