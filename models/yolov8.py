@@ -138,8 +138,8 @@ class yolov8:
         x = Conv2D(128, (3, 3), padding='same', activation='relu')(x) 
         mask = Conv2D(self.class_num, (1, 1), padding='same')(x) 
         if self.class_num == 1:
-            self.output = Activation('sigmoid')(mask)
+            mask = Activation('sigmoid')(mask)
         else:
-            self.output = Activation('softmax')(mask)
+            mask = Activation('softmax')(mask)
       
         return mask
