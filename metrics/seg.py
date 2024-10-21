@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-def dice(y_true,y_pred):
+def Dice(y_true,y_pred):
     return (2 * tf.reduce_sum(y_true * y_pred)) / (tf.reduce_sum(y_true) + tf.reduce_sum(y_pred))
 
 def IOU(y_true, y_pred):
