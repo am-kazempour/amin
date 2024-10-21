@@ -8,6 +8,8 @@ import keras
 
 class yolov8:
     """
+    !!! Developed by Amin !!!
+    
     install:
       !pip install --upgrade keras-cv
       !pip install --upgrade keras
@@ -24,7 +26,7 @@ class yolov8:
       paramet = {
         "n" : [0.33,0.25,2,1]
       }
-      self.d,self.w,self.r,self.n = paramet['n']
+      self.d,self.w,self.r,self.n = paramet[type]
 
     def load_backbone(self):
         
@@ -111,7 +113,7 @@ class yolov8:
         
         return Multiply()([x, cbam_feature]) 
  
-    def spatial_attention(x): 
+    def spatial_attention(self,x): 
         avg_pool = Lambda(lambda z: tf.reduce_mean(z, axis=-1, keepdims=True))(x) 
         max_pool = Lambda(lambda z: tf.reduce_max(z, axis=-1, keepdims=True))(x) 
         concat = Concatenate(axis=-1)([avg_pool, max_pool]) 
