@@ -146,10 +146,10 @@ class trans_unet_1:
         e2 = self._encoder(self.input[:,:,:,2:])
         
         c5 = layers.Concatenate()([e1, e2])
-        c5 = tf.reshape(c5,(256,2024))
+        # c5 = tf.reshape(c5,(256,2024))
         # Transformer Encoder
         shape_before_flattening = K.int_shape(c5)
-        x = layers.Reshape((shape_before_flattening[1] * shape_before_flattening[2], self.num_filters*16))(c5)
+        x = layers.Reshape((shape_before_flattening[1] * shape_before_flattening[2], self.num_filters*16*2))(c5)
         x = self.transformer_encoder(x)
         x = layers.Reshape((shape_before_flattening[1], shape_before_flattening[2], self.num_filters*16))(x)
         
