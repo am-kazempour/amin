@@ -151,7 +151,7 @@ class trans_unet_1:
         shape_before_flattening = K.int_shape(c5)
         x = layers.Reshape((shape_before_flattening[1] * shape_before_flattening[2], self.num_filters*16*2))(c5)
         x = self.transformer_encoder(x)
-        x = layers.Reshape((shape_before_flattening[1], shape_before_flattening[2], self.num_filters*16))(x)
+        x = layers.Reshape((shape_before_flattening[1], shape_before_flattening[2], self.num_filters*16*2))(x)
         
         # Decoder: UNet with Conv Blocks
         u6 = layers.UpSampling2D((2, 2))(x)
