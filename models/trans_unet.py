@@ -138,13 +138,19 @@ class trans_unet_1:
         
         c5 = self.conv_block(p4, self.num_filters*16)
 
-        return c5
+        return c5,c4,c3,c2,c1
         
     def __architecture(self):
         
-        e1 = self._encoder(self.input[:,:,:,:2])
-        e2 = self._encoder(self.input[:,:,:,2:])
+        e1,e1c4,e1c3,e1c2,e1c1 = self._encoder(self.input[:,:,:,:2])
+        e2,e2c4,e2c3,e2c2,e2c1 = self._encoder(self.input[:,:,:,2:])
         
+        c4 = layers.Concatenate()([e1c4, e2c4])
+        c3 = layers.Concatenate()([e1c3, e2c3])
+        c2 = layers.Concatenate()([e1c2, e2c2])
+        c1 = layers.Concatenate()([e1c1, e2c1])
+
+
         c5 = layers.Concatenate()([e1, e2])
         # c5 = tf.reshape(c5,(256,2024))
         # Transformer Encoder
