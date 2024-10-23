@@ -83,3 +83,4 @@ class Unet:
             x = layers.BatchNormalization()(x)
         x = layers.Activation(activation)(x)
         return x
+
