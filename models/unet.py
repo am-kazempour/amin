@@ -7,7 +7,7 @@ class Unet:
     Developed by Amin
     
     """
-    def __init__(self,input_shape=(256,256, 3),num_filters=64,class_num=1,batch_norm=False,encoder_num=1):
+    def __init__(self,input_shape=(256,256, 3),num_filters=64,class_num=1,batch_norm=True,encoder_num=1):
         self.input_shape = input_shape
         self.input = layers.Input(self.input_shape)
         self.num_filters = num_filters
@@ -50,9 +50,15 @@ class Unet:
         
         return x, c4, c3, c2, c1
 
-    def __bottleneck(self,input):
-        x = layers.Conv2D(self.num_filters*16, (3, 3), activation='relu', padding='same')(input)
-        x = layers.Conv2D(self.num_filters*16, (3, 3), activation='relu', padding='same')(x)
+    def __bottleneck(self,input,activation='relu'):
+        x = layers.Conv2D(self.num_filters*16, (3, 3), padding='same')(input)
+        if self.batch_norm:
+            x = layers.BatchNormalization()(x)
+        x = layers.Activation(activation)(x)
+        x = layers.Conv2D(self.num_filters*16, (3, 3),  padding='same')(x)
+        if self.batch_norm:
+            x = layers.BatchNormalization()(x)
+        x = layers.Activation(activation)(x)
         return x
 
     def __decoder(self, input, c4, c3, c2, c1):
