@@ -32,7 +32,13 @@ class Unet:
             c1 = layers.concatenate([c11,c12])
         
         output = self.__bottleneck(output)
-        self.output = self.__decoder(output, c4, c3, c2, c1)
+        x = self.__decoder(output, c4, c3, c2, c1)
+
+        x = layers.Conv2D(self.class_num, (1, 1))(x)
+        if self.class_num == 1:
+            self.output = layers.Activation('sigmoid')(x)
+        else:
+            self.output = layers.Activation('softmax')(x)
 
     def __encoder(self,input):
 
