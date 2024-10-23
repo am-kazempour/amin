@@ -1,5 +1,17 @@
 import tensorflow as tf
 
+def precision(y_true, y_pred):
+    return tf.keras.metrics.Precision()(y_true, y_pred)
+
+def recall(y_true, y_pred):
+    return tf.keras.metrics.Recall()(y_true, y_pred)
+
+def f1_score(y_true, y_pred):
+    p = precision(y_true, y_pred)
+    r = recall(y_true, y_pred)
+    f1 = 2 * ((p * r) / (p + r + tf.keras.backend.epsilon()))
+    return f1
+
 def Dice(y_true,y_pred):
     return (2 * tf.reduce_sum(y_true * y_pred)) / (tf.reduce_sum(y_true) + tf.reduce_sum(y_pred))
 
