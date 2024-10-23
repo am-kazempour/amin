@@ -57,19 +57,19 @@ class Unet:
 
     def __decoder(self, input, c4, c3, c2, c1):
         
-        x = layers.UpSampling2D((2, 2), strides=(2, 2), padding='same')(input)
+        x = layers.UpSampling2D((2, 2))(input)
         x = layers.concatenate([x, c4])
         x = self.conv_block(x,self.num_filters*8)
 
-        x = layers.UpSampling2D((2, 2), strides=(2, 2), padding='same')(x)
+        x = layers.UpSampling2D((2, 2))(x)
         x = layers.concatenate([x, c3])
         x = self.conv_block(x,self.num_filters*4)
 
-        x = layers.UpSampling2D((2, 2), strides=(2, 2), padding='same')(x)
+        x = layers.UpSampling2D((2, 2))(x)
         x = layers.concatenate([x, c2])
         x = self.conv_block(x,self.num_filters*2)
 
-        x = layers.UpSampling2D((2, 2), strides=(2, 2), padding='same')(x)
+        x = layers.UpSampling2D((2, 2))(x)
         x = layers.concatenate([x, c1])
         x = self.conv_block(x,self.num_filters)
 
