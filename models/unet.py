@@ -77,8 +77,12 @@ class Unet:
 
     def conv_block(self,x, filters, kernel_size=3, activation='relu'):
         x = layers.Conv2D(filters, kernel_size, padding='same')(x)
+        if self.batch_norm:
+            x = layers.BatchNormalization()(x)
+        
         x = layers.Activation(activation)(x)
         x = layers.Conv2D(filters, kernel_size, padding='same')(x)
+        
         if self.batch_norm:
             x = layers.BatchNormalization()(x)
         x = layers.Activation(activation)(x)
