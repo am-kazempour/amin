@@ -140,9 +140,9 @@ class trans_unet(Unet):
         # c5 = tf.reshape(c5,(256,2024))
         # Transformer Encoder
         shape_before_flattening = K.int_shape(output)
-        x = layers.Reshape((shape_before_flattening[1] * shape_before_flattening[2], self.num_filters*16*2))(output)
+        x = layers.Reshape((shape_before_flattening[1] * shape_before_flattening[2], self.num_filters*8*self.encoder_num))(output)
         x = self.transformer_encoder(x)
-        x = layers.Reshape((shape_before_flattening[1], shape_before_flattening[2], self.num_filters*16*2))(x)
+        x = layers.Reshape((shape_before_flattening[1], shape_before_flattening[2], self.num_filters*8*self.encoder_num))(x)
         
         # Decoder: UNet with Conv Blocks
         u6 = layers.UpSampling2D((2, 2))(x)
