@@ -13,25 +13,25 @@ class Unet:
         self.class_num = class_num
         self.batch_norm = batch_norm
         self.encoder_num = encoder_num
-        self.__architecture()
+        self._architecture()
 
     def model(self):
         return Model(inputs = self.input,outputs = [self.output])
 
-    def __architecture(self):
+    def _architecture(self):
         if self.encoder_num == 1:
-            output, c4, c3, c2, c1= self.__encoder(self.input)
+            output, c4, c3, c2, c1= self._encoder(self.input)
         else:
-            output1, c41, c31, c21, c11= self.__encoder(self.input[:,:,:,:2])
-            output2, c42, c32, c22, c12= self.__encoder(self.input[:,:,:,2:])
+            output1, c41, c31, c21, c11= self._encoder(self.input[:,:,:,:2])
+            output2, c42, c32, c22, c12= self._encoder(self.input[:,:,:,2:])
             output = layers.concatenate([output1,output2])
             c4 = layers.concatenate([c41,c42])
             c3 = layers.concatenate([c31,c32])
             c2 = layers.concatenate([c21,c22])
             c1 = layers.concatenate([c11,c12])
         
-        output = self.__bottleneck(output)
-        x = self.__decoder(output, c4, c3, c2, c1)
+        output = self._bottleneck(output)
+        x = self._decoder(output, c4, c3, c2, c1)
 
         x = layers.Conv2D(self.class_num, (1, 1))(x)
         if self.class_num == 1:
@@ -39,7 +39,7 @@ class Unet:
         else:
             self.output = layers.Activation('softmax')(x)
 
-    def __encoder(self,input):
+    def _encoder(self,input):
 
         c1 = self.conv_block(input,self.num_filters)
         x = layers.MaxPooling2D((2, 2))(c1)
@@ -55,7 +55,7 @@ class Unet:
         
         return x, c4, c3, c2, c1
 
-    def __bottleneck(self,input,activation='relu'):
+    def _bottleneck(self,input,activation='relu'):
         x = layers.Conv2D(self.num_filters*16, (3, 3), padding='same')(input)
         if self.batch_norm:
             x = layers.BatchNormalization()(x)
@@ -66,7 +66,7 @@ class Unet:
         x = layers.Activation(activation)(x)
         return x
 
-    def __decoder(self, input, c4, c3, c2, c1):
+    def _decoder(self, input, c4, c3, c2, c1):
         
         x = layers.UpSampling2D((2, 2))(input)
         x = layers.concatenate([x, c4])
@@ -109,7 +109,7 @@ class trans_unet(Unet):
         super().__init__(input_shape,num_filters,class_num,batch_norm,encoder_num)
         self.num_heads = num_heads
         self.ff_dim = ff_dim
-        self.__architecture()
+        self._architecture()
 
     def transformer_encoder(self , x):
         # Normalization and Attention
@@ -124,13 +124,13 @@ class trans_unet(Unet):
         x_out = layers.Add()([x3, x2])
         return x_out
  
-    def __architecture(self):
+    def _architecture(self):
         
         if self.encoder_num == 1:
-            output, c4, c3, c2, c1= self.__encoder(self.input)
+            output, c4, c3, c2, c1= self._encoder(self.input)
         else:
-            output1, c41, c31, c21, c11= self.__encoder(self.input[:,:,:,:2])
-            output2, c42, c32, c22, c12= self.__encoder(self.input[:,:,:,2:])
+            output1, c41, c31, c21, c11= self._encoder(self.input[:,:,:,:2])
+            output2, c42, c32, c22, c12= self._encoder(self.input[:,:,:,2:])
             output = layers.concatenate([output1,output2])
             c4 = layers.concatenate([c41,c42])
             c3 = layers.concatenate([c31,c32])
