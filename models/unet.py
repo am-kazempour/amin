@@ -106,10 +106,9 @@ class trans_unet(Unet):
     
     """
     def __init__(self,input_shape=(256,256, 3),num_filters=64,class_num=1,num_heads=4,ff_dim=32,batch_norm=True,encoder_num=1):
-        super().__init__(input_shape,num_filters,class_num,batch_norm,encoder_num)
         self.num_heads = num_heads
         self.ff_dim = ff_dim
-        self._architecture()
+        super().__init__(input_shape,num_filters,class_num,batch_norm,encoder_num)
 
     def transformer_encoder(self , x):
         # Normalization and Attention
