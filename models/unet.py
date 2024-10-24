@@ -1,6 +1,5 @@
 import tensorflow as tf
 from tensorflow.keras import layers, Model
-from tensorflow_addons.layers import MultiHeadAttention
 import tensorflow.keras.backend as K
 class Unet:
     """
