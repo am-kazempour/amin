@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import layers, Model
-
+from tensorflow_addons.layers import MultiHeadAttention
 
 class Unet:
     """
@@ -100,3 +100,5 @@ class Unet:
         x = layers.Activation(activation)(x)
         return x
 
+class SwinUNet:
+    pass
