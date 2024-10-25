@@ -216,8 +216,9 @@ class SwinUNet(Unet):
         x = inputs
         for skip in reversed(skip_connections):
             x = layers.Conv2DTranspose(filters=skip.shape[-1], kernel_size=3, strides=2, padding="same")(x)
+            x,skip = CustomPadding()(x,skip)
             x = layers.Concatenate()([x, skip])
-            x = self._block(x, self.num_heads, self.head_dim, self.windows_size, self.shift_size)
+            x = self._block(x)
             x = layers.LayerNormalization()(x)
         return x
 
