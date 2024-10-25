@@ -234,6 +234,9 @@ class SwinUNet(Unet):
         attn_output = mha_layer(patches, patches)
         attn_output = layers.Reshape((height, width, -1))(attn_output)
 
+        if attn_output.shape[-1] != inputs.shape[-1]:
+            attn_output = layers.Conv2D(inputs.shape[-1], kernel_size=1, padding="same")(attn_output)
+    
         # Shifted Window
         if self.shift_size > 0:
             attn_output = RollLayer(shift_size=self.shift_size, axis=[1, 2])(attn_output)
