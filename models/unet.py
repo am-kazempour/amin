@@ -248,9 +248,9 @@ class SwinUNet(Unet):
 class CustomPadding(layers.Layer):
     def call(self, input1,input2):
         if input1.shape[1] > input2.shape[1]:
-            input2 = tf.pad(input2, [[0, 0], [1, 0], [0, 0], [0, 0]], "CONSTANT")
+            input2 = tf.pad(input2, [[0, 0], [input1.shape[1] - input2.shape[1], 0], [0, 0], [0, 0]], "CONSTANT")
         elif input1.shape[1] < input2.shape[1]:
-            input1 = tf.pad(input1, [[0, 0], [1, 0], [0, 0], [0, 0]], "CONSTANT")
+            input1 = tf.pad(input1, [[0, 0], [input2.shape[1] - input1.shape[1], 0], [0, 0], [0, 0]], "CONSTANT")
         if input1.shape[2] > input2.shape[2]:
             input2 = tf.pad(input2, [[0, 0], [0, 0], [1, 0], [0, 0]], "CONSTANT")
         elif input1.shape[2] < input2.shape[2]:
