@@ -207,7 +207,7 @@ class SwinUNet(Unet):
     def _encoder(self,inputs):
         x = inputs
         for _ in range(self.num_blocks):
-            x = self._block(x, self.num_heads, self.head_dim, self.window_size, self.shift_size)
+            x = self._block(x, self.num_heads, self.head_dim, self.windows_size, self.shift_size)
             x = layers.LayerNormalization()(x)
             x = layers.Conv2D(filters=x.shape[-1], kernel_size=3, strides=2, padding="same")(x)
         return x
@@ -217,7 +217,7 @@ class SwinUNet(Unet):
         for skip in reversed(skip_connections):
             x = layers.Conv2DTranspose(filters=skip.shape[-1], kernel_size=3, strides=2, padding="same")(x)
             x = layers.Concatenate()([x, skip])
-            x = self._block(x, self.num_heads, self.head_dim, self.window_size, self.shift_size)
+            x = self._block(x, self.num_heads, self.head_dim, self.windows_size, self.shift_size)
             x = layers.LayerNormalization()(x)
         return x
 
@@ -226,9 +226,9 @@ class SwinUNet(Unet):
         height, width = input_shape[1], input_shape[2]
 
         # Partition the window into patches
-        patch_size = self.window_size * self.window_size
-        patches = tf.image.extract_patches(inputs, sizes=[1, self.window_size, self.window_size, 1],
-                                        strides=[1, self.window_size, self.window_size, 1], rates=[1, 1, 1, 1], padding='SAME')
+        patch_size = self.windows_size * self.windows_size
+        patches = tf.image.extract_patches(inputs, sizes=[1, self.windows_size, self.windows_size, 1],
+                                        strides=[1, self.windows_size, self.windows_size, 1], rates=[1, 1, 1, 1], padding='SAME')
 
         # Multi-Head Attention with windows
         mha_layer = layers.MultiHeadAttention(head_size=self.head_dim, num_heads=self.num_heads, attention_axes=(1, 2))
