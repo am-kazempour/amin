@@ -232,7 +232,7 @@ class SwinUNet(Unet):
         # Multi-Head Attention with windows
         mha_layer = layers.MultiHeadAttention(key_dim=self.head_dim, num_heads=self.num_heads, attention_axes=(1, 2))
         attn_output = mha_layer(patches, patches)
-        attn_output = layers.Reshape(input_shape[0], height, width, -1)(attn_output)
+        attn_output = layers.Reshape((input_shape[0], height, width, -1))(attn_output)
 
         # Shifted Window
         if self.shift_size > 0:
