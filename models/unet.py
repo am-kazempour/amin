@@ -222,7 +222,7 @@ class SwinUNet(Unet):
         return x
 
     def _block(self, inputs):
-        input_shape = tf.shape(inputs)
+        input_shape = tf.keras.shape(inputs)
         height, width = input_shape[1], input_shape[2]
 
         # Partition the window into patches
