@@ -207,7 +207,7 @@ class SwinUNet(Unet):
     def _encoder(self,inputs):
         x = inputs
         for _ in range(self.num_blocks):
-            x = self._block(x, self.num_heads, self.head_dim, self.windows_size, self.shift_size)
+            x = self._block(x)
             x = layers.LayerNormalization()(x)
             x = layers.Conv2D(filters=x.shape[-1], kernel_size=3, strides=2, padding="same")(x)
         return x
