@@ -275,3 +275,6 @@ class RollLayer(layers.Layer):
 
     def call(self, inputs):
         return tf.roll(inputs, shift=self.shift_size, axis=self.axis)
+    
+    def compute_output_shape(self, input_shape):
+        return input_shape
