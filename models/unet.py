@@ -227,8 +227,7 @@ class SwinUNet(Unet):
 
         # Partition the window into patches
         patch_size = self.windows_size * self.windows_size
-        patches = tf.image.extract_patches(inputs, sizes=[1, self.windows_size, self.windows_size, 1],
-                                        strides=[1, self.windows_size, self.windows_size, 1], rates=[1, 1, 1, 1], padding='SAME')
+        patches = ExtractPatchesLayer(self.windows_size)(inputs)
 
         # Multi-Head Attention with windows
         mha_layer = layers.MultiHeadAttention(head_size=self.head_dim, num_heads=self.num_heads, attention_axes=(1, 2))
@@ -253,3 +252,16 @@ class CustomPadding(layers.Layer):
         elif input1.shape[2] < input2.shape[2]:
             input1 = tf.pad(input1, [[0, 0], [0, 0], [1, 0], [0, 0]], "CONSTANT")
         return input1,input2
+
+class ExtractPatchesLayer(layers.Layer):
+    def __init__(self, windows_size):
+        super(ExtractPatchesLayer, self).__init__()
+        self.windows_size = windows_size
+
+    def call(self, inputs):
+        patches = tf.image.extract_patches(inputs, 
+                                           sizes=[1, self.windows_size, self.windows_size, 1],
+                                           strides=[1, self.windows_size, self.windows_size, 1],
+                                           rates=[1, 1, 1, 1], 
+                                           padding='SAME')
+        return patches
