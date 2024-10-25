@@ -236,7 +236,7 @@ class SwinUNet(Unet):
 
         # Shifted Window
         if self.shift_size > 0:
-            attn_output = RollLayer(shift=self.shift_size, axis=[1, 2])(attn_output)
+            attn_output = RollLayer(shift_size=self.shift_size, axis=[1, 2])(attn_output)
 
         # Skip connection
         return layers.Add()([inputs, attn_output])
