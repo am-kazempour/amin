@@ -209,7 +209,8 @@ class SwinUNet(Unet):
         for _ in range(self.num_blocks):
             x = self._block(x)
             x = layers.LayerNormalization()(x)
-            x = layers.Conv2D(filters=x.shape[-1], kernel_size=3, strides=2, padding="same")(x)
+            x = layers.Conv2D(filters=x.shape[-1], kernel_size=3, padding="same")(x)
+        x = layers.MaxPooling2D((2, 2))(x)
         return x
     
     def _decoder(self, inputs, skip_connections):
