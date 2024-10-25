@@ -222,7 +222,7 @@ class SwinUNet(Unet):
         return x
 
     def _block(self, inputs):
-        input_shape = layers.shape(inputs)
+        input_shape = inputs.shape
         height, width = input_shape[1], input_shape[2]
 
         # Partition the window into patches
@@ -241,7 +241,6 @@ class SwinUNet(Unet):
 
         # Skip connection
         return layers.Add()([inputs, attn_output])
-
 
 class CustomPadding(layers.Layer):
     def call(self, input1,input2):
