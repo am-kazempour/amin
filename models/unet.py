@@ -215,7 +215,7 @@ class SwinUNet(Unet):
     def _decoder(self, inputs, skip_connections):
         x = inputs
         for skip in reversed(skip_connections):
-            x = layers.Conv2DTranspose(filters=skip.shape[-1], kernel_size=3, strides=2, padding="same")(x)
+            x = layers.UpSampling2D((2,2))(x)
             x,skip = CustomPadding()(x,skip)
             x = layers.Concatenate()([x, skip])
             x = self._block(x)
