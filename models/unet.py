@@ -268,10 +268,10 @@ class ExtractPatchesLayer(layers.Layer):
     
 
 class RollLayer(layers.Layer):
-    def __init__(self, shift_size, axes, **kwargs):
+    def __init__(self, shift_size, axis, **kwargs):
         super(RollLayer, self).__init__(**kwargs)
         self.shift_size = shift_size
-        self.axes = axes
+        self.axis = axis
 
     def call(self, inputs):
-        return tf.roll(inputs, shift=self.shift_size, axis=self.axes)
+        return tf.roll(inputs, shift=self.shift_size, axis=self.axis)
