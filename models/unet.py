@@ -230,7 +230,7 @@ class SwinUNet(Unet):
         patches = ExtractPatchesLayer(self.windows_size)(inputs)
 
         # Multi-Head Attention with windows
-        mha_layer = layers.MultiHeadAttention(head_size=self.head_dim, num_heads=self.num_heads, attention_axes=(1, 2))
+        mha_layer = layers.MultiHeadAttention(key_dim=self.head_dim, num_heads=self.num_heads, attention_axes=(1, 2))
         attn_output = mha_layer(patches, patches)
         attn_output = tf.reshape(attn_output, [input_shape[0], height, width, -1])
 
