@@ -236,7 +236,7 @@ class SwinUNet(Unet):
 
         # Shifted Window
         if self.shift_size > 0:
-            attn_output = tf.roll(attn_output, shift=self.shift_size, axis=[1, 2])
+            attn_output = RollLayer(shift=self.shift_size, axis=[1, 2])(attn_output)
 
         # Skip connection
         return layers.Add()([inputs, attn_output])
@@ -265,3 +265,13 @@ class ExtractPatchesLayer(layers.Layer):
                                            rates=[1, 1, 1, 1], 
                                            padding='SAME')
         return patches
+    
+
+class RollLayer(layers.Layer):
+    def __init__(self, shift_size, axes, **kwargs):
+        super(RollLayer, self).__init__(**kwargs)
+        self.shift_size = shift_size
+        self.axes = axes
+
+    def call(self, inputs):
+        return tf.roll(inputs, shift=self.shift_size, axis=self.axes)
