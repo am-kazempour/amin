@@ -170,8 +170,76 @@ class trans_unet(Unet):
         else:
             self.output = layers.Activation('softmax')(c9)
         
-class SwinUNet:
-    pass
+class SwinUNet(Unet):
+    """
+    Developed by Amin
+    
+    """
+    def __init__(self,input_shape=(256,256, 3),num_filters=64,class_num=1,batch_norm=True,encoder_num=1,num_blocks=4,num_heads=8,head_dim=64,windows_size=4,shift_size=2):
+        self.num_blocks = num_blocks
+        self.num_heads = num_heads
+        self.head_dim =head_dim
+        self.windows_size = windows_size
+        self.shift_size = shift_size
+        super().__init__(input_shape,num_filters,class_num,batch_norm,encoder_num)
+    
+    def _architecture(self):
+        skip_connections = []
+        x = self.input
+        for _ in range(self.num_blocks):
+            x = self._encoder(x)
+            skip_connections.append(x)
+
+        # Bottleneck
+        x = self._block(x)
+
+        # Decoder
+        x = self._decoder(x, skip_connections)
+
+        # Output layer (segmentation mask)
+        outputs = layers.Conv2D(self.num_classes, kernel_size=1, activation='sigmoid')(x)
+
+        return tf.keras.Model(self.input, outputs)
+    
+    def _encoder(self,inputs):
+        x = inputs
+        for _ in range(self.num_blocks):
+            x = self._block(x, self.num_heads, self.head_dim, self.window_size, self.shift_size)
+            x = layers.LayerNormalization()(x)
+            x = layers.Conv2D(filters=x.shape[-1], kernel_size=3, strides=2, padding="same")(x)
+        return x
+    
+    def _decoder(self, inputs, skip_connections):
+        x = inputs
+        for skip in reversed(skip_connections):
+            x = layers.Conv2DTranspose(filters=skip.shape[-1], kernel_size=3, strides=2, padding="same")(x)
+            x = layers.Concatenate()([x, skip])
+            x = self._block(x, self.num_heads, self.head_dim, self.window_size, self.shift_size)
+            x = layers.LayerNormalization()(x)
+        return x
+
+    def _block(self, inputs):
+        input_shape = tf.shape(inputs)
+        height, width = input_shape[1], input_shape[2]
+
+        # Partition the window into patches
+        patch_size = self.window_size * self.window_size
+        patches = tf.image.extract_patches(inputs, sizes=[1, self.window_size, self.window_size, 1],
+                                        strides=[1, self.window_size, self.window_size, 1], rates=[1, 1, 1, 1], padding='SAME')
+
+        # Multi-Head Attention with windows
+        mha_layer = layers.MultiHeadAttention(head_size=self.head_dim, num_heads=self.num_heads, attention_axes=(1, 2))
+        attn_output = mha_layer(patches, patches)
+        attn_output = tf.reshape(attn_output, [input_shape[0], height, width, -1])
+
+        # Shifted Window
+        if self.shift_size > 0:
+            attn_output = tf.roll(attn_output, shift=self.shift_size, axis=[1, 2])
+
+        # Skip connection
+        return layers.Add()([inputs, attn_output])
+
+
 class CustomPadding(layers.Layer):
     def call(self, input1,input2):
         if input1.shape[1] > input2.shape[1]:
