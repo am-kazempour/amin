@@ -197,9 +197,12 @@ class SwinUNet(Unet):
         x = self._decoder(x, skip_connections)
 
         # Output layer (segmentation mask)
-        outputs = layers.Conv2D(self.num_classes, kernel_size=1, activation='sigmoid')(x)
+        x = layers.Conv2D(self.class_num, (1, 1))(x)
+        if self.class_num == 1:
+            self.output = layers.Activation('sigmoid')(x)
+        else:
+            self.output = layers.Activation('softmax')(x)
 
-        return tf.keras.Model(self.input, outputs)
     
     def _encoder(self,inputs):
         x = inputs
