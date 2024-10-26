@@ -270,7 +270,7 @@ class DeepLabv3(Unet):
         x5 = layers.Conv2D(256, kernel_size=1, padding='same')(x5)
         x5 = layers.BatchNormalization()(x5)
         x5 = layers.ReLU()(x5)
-        x5 = layers.UpSampling2D(size=(tf.shape(x)[1], tf.shape(x)[2]), interpolation='bilinear')(x5)
+        x5 = layers.UpSampling2D(size=(x.shape[1], x.shape[2]), interpolation='bilinear')(x5)
         
         # Concatenate all features
         x = layers.Concatenate()([x1, x2, x3, x4, x5])
