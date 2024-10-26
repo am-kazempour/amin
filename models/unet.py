@@ -304,7 +304,11 @@ class DeepLabv3(Unet):
         x = layers.UpSampling2D(size=(skip_connection.shape[1] // x.shape[1], skip_connection.shape[2] // x.shape[2]), interpolation="bilinear")(x)
         x = layers.Concatenate()([x, skip_connection])
         
-        x = self.conv_block(x,filters=256,kernel_size=3)
+        x = self.conv_block(x,filters=256,kernel_size=3,repetition=1)
+        x = layers.UpSampling2D(size=(4, 4), interpolation="bilinear")(x)
+
+        x = self.conv_block(x,filters=256,kernel_size=3,repetition=1)
+        x = layers.UpSampling2D(size=(4, 4), interpolation="bilinear")(x)
         # x = self.decoder_block(x, skip_connection)
         
         # Output layer
