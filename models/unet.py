@@ -86,17 +86,12 @@ class Unet:
 
         return x
 
-    def conv_block(self,x, filters, kernel_size=3, activation='relu'):
-        x = layers.Conv2D(filters, kernel_size, padding='same')(x)
-        if self.batch_norm:
-            x = layers.BatchNormalization()(x)
-        
-        x = layers.Activation(activation)(x)
-        x = layers.Conv2D(filters, kernel_size, padding='same')(x)
-        
-        if self.batch_norm:
-            x = layers.BatchNormalization()(x)
-        x = layers.Activation(activation)(x)
+    def conv_block(self,x, filters, kernel_size=3, activation='relu',repetition=2):
+        for _ in range(repetition):
+            x = layers.Conv2D(filters, kernel_size, padding='same')(x)
+            if self.batch_norm:
+                x = layers.BatchNormalization()(x)
+            x = layers.Activation(activation)(x)
         return x
 
 
@@ -175,7 +170,7 @@ class SwinUNet(Unet):
     Developed by Amin
     
     """
-    def __init__(self,input_shape=(256,256, 3),num_filters=64,class_num=1,batch_norm=True,encoder_num=1,num_blocks=4,num_heads=8,head_dim=64,windows_size=4,shift_size=2):
+    def __init__(self,input_shape=(256,256, 3),num_filters=64,class_num=1,batch_norm=True,encoder_num=1,num_blocks=4,num_heads=4,head_dim=32,windows_size=4,shift_size=2):
         self.num_blocks = num_blocks
         self.num_heads = num_heads
         self.head_dim =head_dim
@@ -206,10 +201,11 @@ class SwinUNet(Unet):
     
     def _encoder(self,inputs):
         x = inputs
-        for _ in range(self.num_blocks):
+        f = x.shape[-1] * 2
+        for _ in range(self.num_blocks//2):
             x = self._block(x)
             x = layers.LayerNormalization()(x)
-            x = layers.Conv2D(filters=x.shape[-1], kernel_size=3, padding="same")(x)
+            x = layers.Conv2D(filters=f, kernel_size=3, padding="same")(x)
         x = layers.MaxPooling2D((2, 2))(x)
         return x
     
@@ -246,6 +242,78 @@ class SwinUNet(Unet):
         # Skip connection
         return layers.Add()([inputs, attn_output])
 
+class DeepLabv3(Unet):
+
+    def __init__(self,input_shape=(256,256, 3),num_filters=64,class_num=1,batch_norm=True,encoder_num=1):
+        super().__init__(input_shape,num_filters,class_num,batch_norm,encoder_num)
+    
+    def atrous_conv_block(self,x, filters, rate):
+        x = layers.Conv2D(filters, kernel_size=3, padding='same', dilation_rate=rate)(x)
+        x = layers.BatchNormalization()(x)
+        return layers.ReLU()(x)
+    
+    def aspp_block(self,x):
+        # ASPP with different atrous rates
+        rate1 = 1
+        rate2 = 6
+        rate3 = 12
+        rate4 = 18
+        
+        x1 = self.atrous_conv_block(x, 256, rate1)
+        x2 = self.atrous_conv_block(x, 256, rate2)
+        x3 = self.atrous_conv_block(x, 256, rate3)
+        x4 = self.atrous_conv_block(x, 256, rate4)
+        
+        # Global Average Pooling
+        x5 = layers.GlobalAveragePooling2D()(x)
+        x5 = layers.Reshape((1, 1, -1))(x5)
+        x5 = layers.Conv2D(256, kernel_size=1, padding='same')(x5)
+        x5 = layers.BatchNormalization()(x5)
+        x5 = layers.ReLU()(x5)
+        x5 = layers.UpSampling2D(size=(tf.shape(x)[1], tf.shape(x)[2]), interpolation='bilinear')(x5)
+        
+        # Concatenate all features
+        x = layers.Concatenate()([x1, x2, x3, x4, x5])
+        # Final convolution
+        x = self.conv_block(x,filters=256,kernel_size=1,repetition=1)
+        return x
+
+    # def decoder_block(self,x, skip):
+    #     x = layers.Conv2DTranspose(256, kernel_size=3, strides=2, padding='same')(x)
+    #     x = layers.Concatenate()([x, skip])
+    #     x = self.conv_block(x, 256)
+    #     return x
+
+    def _architecture(self):
+        
+        base_model = tf.keras.applications.EfficientNetB0(include_top=False, weights="imagenet", input_tensor=self.input)
+        layer_names = [
+            "block3a_expand_activation",  
+            "top_activation" 
+        ]
+
+        layers_outputs = [base_model.get_layer(name).output for name in layer_names]
+
+        # ASPP block
+        x = self.aspp_block(layers_outputs[1])
+
+        # Decoder
+        skip_connection = layers_outputs[0]
+        skip_connection = self.conv_block(skip_connection,filters=48,kernel_size=1,repetition=1)
+        
+        x = layers.UpSampling2D(size=(tf.shape(skip_connection)[1] // tf.shape(x)[1], tf.shape(skip_connection)[2] // tf.shape(x)[2]), interpolation="bilinear")(x)
+        x = layers.Concatenate()([x, skip_connection])
+        
+        x = self.conv_block(x,filters=256,kernel_size=3)
+        # x = self.decoder_block(x, skip_connection)
+        
+        # Output layer
+        x = layers.Conv2D(self.class_num, (1, 1))(x)
+        if self.class_num == 1:
+            self.output = layers.Activation('sigmoid')(x)
+        else:
+            self.output = layers.Activation('softmax')(x)
+        
 class CustomPadding(layers.Layer):
     def call(self, input1,input2):
         if input1.shape[1] > input2.shape[1]:
@@ -271,7 +339,6 @@ class ExtractPatchesLayer(layers.Layer):
                                            padding='SAME')
         return patches
     
-
 class RollLayer(layers.Layer):
     def __init__(self, shift_size, axis, **kwargs):
         super(RollLayer, self).__init__(**kwargs)
