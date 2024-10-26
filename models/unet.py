@@ -286,7 +286,7 @@ class DeepLabv3(Unet):
 
     def _architecture(self):
         
-        base_model = tf.keras.applications.EfficientNetB0(include_top=False, weights="imagenet", input_tensor=self.input)
+        base_model = tf.keras.applications.EfficientNetB0(include_top=False, input_tensor=self.input)
         layer_names = [
             "block3a_expand_activation",  
             "top_activation" 
