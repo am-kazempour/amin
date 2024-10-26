@@ -301,7 +301,7 @@ class DeepLabv3(Unet):
         skip_connection = layers_outputs[0]
         skip_connection = self.conv_block(skip_connection,filters=48,kernel_size=1,repetition=1)
         
-        x = layers.UpSampling2D(size=(tf.shape(skip_connection)[1] // tf.shape(x)[1], tf.shape(skip_connection)[2] // tf.shape(x)[2]), interpolation="bilinear")(x)
+        x = layers.UpSampling2D(size=(skip_connection.shape[1] // x.shape[1], skip_connection.shape[2] // x.shape[2]), interpolation="bilinear")(x)
         x = layers.Concatenate()([x, skip_connection])
         
         x = self.conv_block(x,filters=256,kernel_size=3)
