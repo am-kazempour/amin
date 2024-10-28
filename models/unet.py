@@ -33,11 +33,7 @@ class Unet:
         output = self._bottleneck(output)
         x = self._decoder(output, c4, c3, c2, c1)
 
-        x = layers.Conv2D(self.class_num, (1, 1))(x)
-        if self.class_num == 1:
-            self.output = layers.Activation('sigmoid')(x)
-        else:
-            self.output = layers.Activation('softmax')(x)
+        self._head(x)
 
     def _encoder(self,input):
 
@@ -94,6 +90,12 @@ class Unet:
             x = layers.Activation(activation)(x)
         return x
 
+    def _head(self,input):
+        x = layers.Conv2D(self.class_num, (1, 1))(input)
+        if self.class_num == 1:
+            self.output = layers.Activation('sigmoid')(x)
+        else:
+            self.output = layers.Activation('softmax')(x)
 
 class trans_unet(Unet):
     """
@@ -159,11 +161,38 @@ class trans_unet(Unet):
         u9 = layers.Concatenate()([u9, c1])
         c9 = self.conv_block(u9, self.num_filters)
         
-        c9 = layers.Conv2D(self.class_num, (1, 1))(c9)
-        if self.class_num == 1:
-            self.output = layers.Activation('sigmoid')(c9)
-        else:
-            self.output = layers.Activation('softmax')(c9)
+        self._head(c9)
+
+class Unetpp(Unet):
+    def _architecture(self):
+        x40, x30, x20, x10, x00 = self._encoder(self.input)
+
+        x40 = self.conv_block(x40,self.num_filters*16)
+
+        x01 = self.conv_block(self.Concat(x00, x10), self.num_filters)
+        x11 = self.conv_block(self.Concat(x10, x20), self.num_filters*2)
+        x21 = self.conv_block(self.Concat(x20, x30), self.num_filters*4)
+        x31 = self.conv_block(self.Concat(x30, x40), self.num_filters*8)
+        
+        x02 = self.conv_block(self.Concat(x00, x01, x11), self.num_filters)
+        x12 = self.conv_block(self.Concat(x10, x11, x21), self.num_filters*2)
+        x22 = self.conv_block(self.Concat(x20, x21, x31), self.num_filters*4)
+        
+        x03 = self.conv_block(self.Concat(x00, x01, x02, x12), self.num_filters)
+        x13 = self.conv_block(self.Concat(x10, x11, x12, x22), self.num_filters*2)
+        
+        x04 = self.conv_block(self.Concat(x00, x01, x02, x03, x13), self.num_filters)
+
+        self._head(x40)
+    
+    def Concat(self, input0, input1, input2=None, input3=None, input4=None):
+        if input2 == None:
+            return layers.Concatenate()([input0, layers.UpSampling2D(size=(2, 2))(input1)])
+        elif input3 == None:
+            return layers.Concatenate()([input0,input1, layers.UpSampling2D(size=(2, 2))(input2)])
+        elif input4 == None:
+            return layers.Concatenate()([input0,input1,input2, layers.UpSampling2D(size=(2, 2))(input3)])
+        return layers.Concatenate()([input0,input1,input2,input3, layers.UpSampling2D(size=(2, 2))(input4)])
         
 class SwinUNet(Unet):
     """
@@ -278,12 +307,6 @@ class DeepLabv3(Unet):
         x = self.conv_block(x,filters=256,kernel_size=1,repetition=1)
         return x
 
-    # def decoder_block(self,x, skip):
-    #     x = layers.Conv2DTranspose(256, kernel_size=3, strides=2, padding='same')(x)
-    #     x = layers.Concatenate()([x, skip])
-    #     x = self.conv_block(x, 256)
-    #     return x
-
     def _architecture(self):
         
         base_model = tf.keras.applications.EfficientNetB0(include_top=False, input_tensor=self.input)
@@ -309,7 +332,6 @@ class DeepLabv3(Unet):
 
         x = self.conv_block(x,filters=256,kernel_size=3,repetition=1)
         x = layers.UpSampling2D(size=(2, 2), interpolation="bilinear")(x)
-        # x = self.decoder_block(x, skip_connection)
         
         # Output layer
         x = layers.Conv2D(self.class_num, (1, 1))(x)
