@@ -183,7 +183,7 @@ class Unetpp(Unet):
         
         x04 = self.conv_block(self.Concat(x00, x01, x02, x03, x13), self.num_filters)
 
-        self._head(x40)
+        self._head(x04)
     
     def Concat(self, input0, input1, input2=None, input3=None, input4=None):
         if input2 == None:
