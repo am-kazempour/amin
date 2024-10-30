@@ -14,3 +14,6 @@ def Exp_loss(y_true, y_pred):
     loss = tf.reduce_mean(true+wrong) 
     
     return loss
+
+def my_Exp_loss(y_true,y_pred):
+    return tf.reduce_mean(tf.concat([tf.math.exp(y_pred[y_true==0]),tf.math.exp(-y_pred[y_true==1])],axis=0))
