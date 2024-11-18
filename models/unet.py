@@ -288,10 +288,10 @@ class DeepLabv3(Unet):
         rate3 = 12
         rate4 = 18
         
-        x1 = self.atrous_conv_block(x, 256, rate1)
-        x2 = self.atrous_conv_block(x, 256, rate2)
-        x3 = self.atrous_conv_block(x, 256, rate3)
-        x4 = self.atrous_conv_block(x, 256, rate4)
+        x1 = self.atrous_conv_block(x, self.num_filters*4, rate1)
+        x2 = self.atrous_conv_block(x, self.num_filters*4, rate2)
+        x3 = self.atrous_conv_block(x, self.num_filters*4, rate3)
+        x4 = self.atrous_conv_block(x, self.num_filters*4, rate4)
         
         # Global Average Pooling
         x5 = layers.GlobalAveragePooling2D()(x)
@@ -304,7 +304,7 @@ class DeepLabv3(Unet):
         # Concatenate all features
         x = layers.Concatenate()([x1, x2, x3, x4, x5])
         # Final convolution
-        x = self.conv_block(x,filters=256,kernel_size=1,repetition=1)
+        x = self.conv_block(x,filters=self.num_filters*4,kernel_size=1,repetition=1)
         return x
 
     def _architecture(self):
@@ -322,15 +322,15 @@ class DeepLabv3(Unet):
 
         # Decoder
         skip_connection = layers_outputs[0]
-        skip_connection = self.conv_block(skip_connection,filters=48,kernel_size=1,repetition=1)
+        skip_connection = self.conv_block(skip_connection,filters=self.num_filters,kernel_size=1,repetition=1)
         
         x = layers.UpSampling2D(size=(skip_connection.shape[1] // x.shape[1], skip_connection.shape[2] // x.shape[2]), interpolation="bilinear")(x)
         x = layers.Concatenate()([x, skip_connection])
         
-        x = self.conv_block(x,filters=256,kernel_size=3,repetition=1)
+        x = self.conv_block(x,filters=self.num_filters*4,kernel_size=3,repetition=1)
         x = layers.UpSampling2D(size=(2, 2), interpolation="bilinear")(x)
 
-        x = self.conv_block(x,filters=256,kernel_size=3,repetition=1)
+        x = self.conv_block(x,filters=self.num_filters*4,kernel_size=3,repetition=1)
         x = layers.UpSampling2D(size=(2, 2), interpolation="bilinear")(x)
         
         # Output layer
