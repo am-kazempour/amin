@@ -46,7 +46,7 @@ class my_model:
 
         combined = layers.Concatenate()([mri_to_ct, ct_to_mri])
         combined = layers.Dense(512, activation="relu")(combined)
-        combined = layers.Reshape((16, 16, 512))(combined)  # Reshape back to spatial format
+        combined = layers.Reshape((8, 8, 512))(combined)  # Reshape back to spatial format
         return combined
 
     def _decoder(self,input):
