@@ -30,8 +30,9 @@ class my_model:
             encoder = tf.keras.applications.EfficientNetB0(
                 include_top=False,
                 input_tensor=input,
-                weights=None,
-                name=name)
+                weights=None)
+        for layer in encoder.layers:
+            layer._name = f"{name}_{layer.name}"
         
         x = encoder.output
         x = layers.Conv2D(512, (1, 1), activation="relu")(x)
