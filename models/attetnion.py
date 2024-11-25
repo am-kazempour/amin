@@ -25,13 +25,13 @@ class my_model:
     def model(self):
         return Model(inputs = self.input,outputs = [self.output])
     
-    def _encoder(self,input):
+    def _encoder(self,input,input_shape):
 
         if self.base_model == "EfficientNet":
             encoder = EfficientNetB0(
                 include_top=False,
                 weights="imagenet",
-                input_shape = input.shape
+                input_shape = input_shape
             )
         
         x = encoder(input)
@@ -74,8 +74,8 @@ class my_model:
 
     def _architecture(self):
 
-        encoder_mri = self._encoder(self.input[:,:,:,:2])
-        encoder_ct = self._encoder(self.input[:,:,:,2:])
+        encoder_mri = self._encoder(self.input[:,:,:,:2],self.mri_input_shape)
+        encoder_ct = self._encoder(self.input[:,:,:,2:],self.ct_input_shape)
 
         bottleneck_features = self._bottleneck(encoder_mri, encoder_ct)
         x = self._decoder(bottleneck_features)
