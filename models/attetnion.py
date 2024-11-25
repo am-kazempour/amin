@@ -1,6 +1,5 @@
 import tensorflow as tf
 from tensorflow.keras import layers, Model
-from tensorflow.keras.applications import EfficientNetB0
 
 class my_model:
 
@@ -28,13 +27,9 @@ class my_model:
     def _encoder(self,input,input_shape):
 
         if self.base_model == "EfficientNet":
-            encoder = EfficientNetB0(
-                include_top=False,
-                weights="imagenet",
-                input_shape = input_shape
-            )
+            encoder = tf.keras.applications.EfficientNetB0(include_top=False, input_tensor=input)
         
-        x = encoder(input)
+        x = encoder.output
         x = layers.Conv2D(512, (1, 1), activation="relu")(x)
         return x
 
