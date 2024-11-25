@@ -56,9 +56,11 @@ class my_model:
 
     def _decoder(self,input):
 
-        x = layers.Conv2DTranspose(256, (3, 3), strides=(2, 2), padding="same", activation="relu")(input)
+        x = layers.Conv2DTranspose(512, (3, 3), strides=(2, 2), padding="same", activation="relu")(input)
+        x = layers.Conv2DTranspose(256, (3, 3), strides=(2, 2), padding="same", activation="relu")(x)
         x = layers.Conv2DTranspose(128, (3, 3), strides=(2, 2), padding="same", activation="relu")(x)
         x = layers.Conv2DTranspose(64, (3, 3), strides=(2, 2), padding="same", activation="relu")(x)
+        x = layers.Conv2DTranspose(32, (3, 3), strides=(2, 2), padding="same", activation="relu")(x)
         return x
 
     def _architecture(self):
