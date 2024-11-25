@@ -32,7 +32,7 @@ class my_model:
                 input_tensor=input,
                 weights=None)
         for layer in encoder.layers:
-            layer._name = f"{name}_{layer.name}"
+            layer.name = f"{name}_{layer.name}"
         
         x = encoder.output
         x = layers.Conv2D(512, (1, 1), activation="relu")(x)
