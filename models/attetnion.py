@@ -35,18 +35,7 @@ class my_model:
 
     def _cross_attention(self,query, key, value):
 
-        query = layers.Reshape((-1, query.shape[-1]))(query)
-        key = layers.Reshape((-1, key.shape[-1]))(key)
-        value = layers.Reshape((-1, value.shape[-1]))(value)
-
-        query = layers.Dense(512)(query)
-        key = layers.Dense(512)(key)
-        value = layers.Dense(512)(value)
-
-        scores = tf.matmul(query, key, transpose_b=True)  # (batch_size, query_len, key_len)
-        scores = layers.Softmax(axis=-1)(scores)  # Normalize scores
-        attended_values = tf.matmul(scores, value)
-
+        attended_values = CrossAttentionLayer(units=512)([query, key, value])
         return attended_values
 
     def _bottleneck(self,encoder_mri, encoder_ct):
@@ -83,3 +72,30 @@ class my_model:
             self.output = layers.Activation('sigmoid')(x)
         else:
             self.output = layers.Activation('softmax')(x)
+
+
+class CrossAttentionLayer(layers.Layer):
+    def __init__(self, units, **kwargs):
+        super(CrossAttentionLayer, self).__init__(**kwargs)
+        self.units = units
+
+    def build(self, input_shape):
+        self.query_dense = layers.Dense(self.units)
+        self.key_dense = layers.Dense(self.units)
+        self.value_dense = layers.Dense(self.units)
+        super(CrossAttentionLayer, self).build(input_shape)
+
+    def call(self, inputs):
+        query, key, value = inputs
+        # محاسبه query, key, value
+        query = self.query_dense(query)
+        key = self.key_dense(key)
+        value = self.value_dense(value)
+        
+        # محاسبه attention scores
+        scores = tf.matmul(query, key, transpose_b=True)
+        scores = tf.nn.softmax(scores, axis=-1)
+        
+        # اعمال توجه و گرفتن مقادیر
+        attended_values = tf.matmul(scores, value)
+        return attended_values
