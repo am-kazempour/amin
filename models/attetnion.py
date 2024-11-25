@@ -27,7 +27,7 @@ class my_model:
     def _encoder(self,input,input_shape):
 
         if self.base_model == "EfficientNet":
-            encoder = tf.keras.applications.EfficientNetB0(include_top=False, input_tensor=input)
+            encoder = tf.keras.applications.EfficientNetB0(include_top=False, input_tensor=input,weights=None)
         
         x = encoder.output
         x = layers.Conv2D(512, (1, 1), activation="relu")(x)
