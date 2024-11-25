@@ -24,10 +24,14 @@ class my_model:
     def model(self):
         return Model(inputs = self.input,outputs = [self.output])
     
-    def _encoder(self,input,input_shape):
+    def _encoder(self,input,name):
 
         if self.base_model == "EfficientNet":
-            encoder = tf.keras.applications.EfficientNetB0(include_top=False, input_tensor=input,weights=None)
+            encoder = tf.keras.applications.EfficientNetB0(
+                include_top=False,
+                input_tensor=input,
+                weights=None,
+                name=name)
         
         x = encoder.output
         x = layers.Conv2D(512, (1, 1), activation="relu")(x)
@@ -58,8 +62,8 @@ class my_model:
 
     def _architecture(self):
 
-        encoder_mri = self._encoder(self.input[:,:,:,:2],self.mri_input_shape)
-        encoder_ct = self._encoder(self.input[:,:,:,2:],self.ct_input_shape)
+        encoder_mri = self._encoder(self.input[:,:,:,:2],"mri")
+        encoder_ct = self._encoder(self.input[:,:,:,2:],"ct")
 
         bottleneck_features = self._bottleneck(encoder_mri, encoder_ct)
         x = self._decoder(bottleneck_features)
