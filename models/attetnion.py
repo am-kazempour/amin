@@ -9,6 +9,7 @@ class my_model:
             base_model="EfficientNet",
             num_filters=64,
             class_num=1,
+            batch_norm=True,
             mri_input_shape=(256,256,2),
             ct_input_shape=(256,256,5),):
         
@@ -17,6 +18,7 @@ class my_model:
         self.num_filters = num_filters
         self.class_num = class_num
         self.base_model = base_model
+        self.batch_norm = batch_norm
         self.mri_input_shape = mri_input_shape
         self.ct_input_shape = ct_input_shape
         self._architecture()
@@ -55,12 +57,19 @@ class my_model:
         return combined
 
     def _decoder(self,input):
+        x = input
+        fillters = 512
+        for _ in range(5):
+            x = layers.UpSampling2D(size=(2, 2))(x)
+            x = self.conv_block(x,filters=fillters)
+            fillters //= 2
 
-        x = layers.Conv2DTranspose(512, (3, 3), strides=(2, 2), padding="same", activation="relu")(input)
-        x = layers.Conv2DTranspose(256, (3, 3), strides=(2, 2), padding="same", activation="relu")(x)
-        x = layers.Conv2DTranspose(128, (3, 3), strides=(2, 2), padding="same", activation="relu")(x)
-        x = layers.Conv2DTranspose(64, (3, 3), strides=(2, 2), padding="same", activation="relu")(x)
-        x = layers.Conv2DTranspose(32, (3, 3), strides=(2, 2), padding="same", activation="relu")(x)
+
+        # x = layers.Conv2DTranspose(512, (3, 3), strides=(2, 2), padding="same", activation="relu")(input)
+        # x = layers.Conv2DTranspose(256, (3, 3), strides=(2, 2), padding="same", activation="relu")(x)
+        # x = layers.Conv2DTranspose(128, (3, 3), strides=(2, 2), padding="same", activation="relu")(x)
+        # x = layers.Conv2DTranspose(64, (3, 3), strides=(2, 2), padding="same", activation="relu")(x)
+        # x = layers.Conv2DTranspose(32, (3, 3), strides=(2, 2), padding="same", activation="relu")(x)
         return x
 
     def _architecture(self):
@@ -72,6 +81,14 @@ class my_model:
         x = self._decoder(bottleneck_features)
 
         self._head(x)
+
+    def conv_block(self,x, filters, kernel_size=3, activation='relu',repetition=1):
+        for _ in range(repetition):
+            x = layers.Conv2D(filters, kernel_size, padding='same')(x)
+            if self.batch_norm:
+                x = layers.BatchNormalization()(x)
+            x = layers.Activation(activation)(x)
+        return x
 
     def _head(self,input):
         x = layers.Conv2D(self.class_num, (1, 1))(input)
