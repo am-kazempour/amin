@@ -20,6 +20,7 @@ class my_model:
         self.base_model = base_model
         self.mri_input_shape = mri_input_shape
         self.ct_input_shape = ct_input_shape
+        self._architecture()
 
     def model(self):
         return Model(inputs = self.input,outputs = [self.output])
