@@ -119,7 +119,18 @@ class my_Unet(Unet):
 
         attended_values = CrossAttentionLayer(units=512)([query, key, value])
         return attended_values
-    
+
+    def _bottleneck(self,encoder_mri, encoder_ct):
+
+        mri_to_ct = self._cross_attention(encoder_mri, encoder_ct, encoder_ct)
+
+        ct_to_mri = self._cross_attention(encoder_ct, encoder_mri, encoder_mri)
+
+        combined = layers.Concatenate()([mri_to_ct, ct_to_mri])
+        combined = layers.Dense(512, activation="relu")(combined)
+        combined = layers.Reshape((8, 8, 512))(combined)  # Reshape back to spatial format
+        return combined
+
     def _architecture(self):
 
         output1, c41, c31, c21, c11= self._encoder(self.input[:,:,:,:2])
