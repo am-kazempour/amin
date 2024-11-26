@@ -141,9 +141,9 @@ class my_Unet(Unet):
         # c2 = layers.concatenate([c21,c22])
         # c1 = layers.concatenate([c11,c12])
         
-        c4 = self._bottleneck(c41,c42,256)
-        c3 = self._bottleneck(c31,c32,128)
-        c2 = self._bottleneck(c21,c22,64)
+        c4 = self._bottleneck(c41,c42,32)
+        c3 = self._bottleneck(c31,c32,32)
+        c2 = self._bottleneck(c21,c22,32)
         c1 = self._bottleneck(c11,c12,32)
 
         bottleneck_features = self._bottleneck(output1, output2,16)
