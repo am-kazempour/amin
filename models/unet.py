@@ -378,21 +378,21 @@ class Unet_skipBlock(Unet):
         skip = SkipBlock(filters = self.depth6,dropout=0.25,status="decoder")(c4)
         x = layers.Concatenate()([x,skip])
         out = layers.Concatenate()([x,c3])
-
+        print(out.shape)
         x = Block([self.depth5,self.depth4],dropout=0.25,status="decoder")(out)
         skip = SkipBlock(filters = self.depth4,dropout=0.25,status="decoder")(out)
         x = layers.Concatenate()([x,skip])
         out = layers.Concatenate()([x,c2])
-        
+        print(out.shape)
         x = Block([self.depth3,self.depth2],dropout=0.25,status="decoder")(out)
         skip = SkipBlock(filters = self.depth2,dropout=0.25,status="decoder")(out)
         x = layers.Concatenate()([x,skip])
         out = layers.Concatenate()([x,c1])
-        
+        print(out.shape)
         x = Block([self.depth1,self.depth1],dropout=0.25,status="decoder")(out)
         skip = SkipBlock(filters = self.depth1,dropout=0.25,status="decoder")(out)
         out = layers.Concatenate()([x,skip])
-
+        print(out.shape)
         return out
 
     def _architecture(self):
