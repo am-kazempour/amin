@@ -399,13 +399,6 @@ class Unet_skipBlock(Unet):
         c4, c3, c2, c1 = self._encoder(self.input)
         x = self._decoder(c4, c3, c2, c1)
         self.output = self._head(x)
-
-    def _head(self,input):
-        x = layers.Conv2D(self.class_num, (1, 1))(input)
-        if self.class_num == 1:
-            self.output = layers.Activation('sigmoid')(x)
-        else:
-            self.output = layers.Activation('softmax')(x)
      
 class CustomPadding(layers.Layer):
     def call(self, input1,input2):
