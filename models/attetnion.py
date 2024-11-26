@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import layers, Model
 
-from unet import Unet
+from .unet import Unet
 
 class my_model:
 
