@@ -138,6 +138,8 @@ class my_Unet(Unet):
             x = layers.UpSampling2D(size=(2, 2))(x)
             x = self.conv_block(x,filters=fillters)
             fillters //= 2
+        
+        return x
 
     def _architecture(self):
 
