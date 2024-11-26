@@ -120,7 +120,7 @@ class my_Unet(Unet):
         attended_values = CrossAttentionLayer(units=512)([query, key, value])
         return attended_values
 
-    def _bottleneck(self,encoder_mri, encoder_ct):
+    def _bottleneck(self,encoder_mri, encoder_ct,size):
 
         mri_to_ct = self._cross_attention(encoder_mri, encoder_ct, encoder_ct)
 
@@ -128,7 +128,7 @@ class my_Unet(Unet):
 
         combined = layers.Concatenate()([mri_to_ct, ct_to_mri])
         combined = layers.Dense(512, activation="relu")(combined)
-        combined = layers.Reshape((16, 16, 512))(combined)  # Reshape back to spatial format
+        combined = layers.Reshape((size, size, 512))(combined)  # Reshape back to spatial format
         return combined
 
     def _architecture(self):
@@ -136,12 +136,17 @@ class my_Unet(Unet):
         output1, c41, c31, c21, c11= self._encoder(self.input[:,:,:,:2])
         output2, c42, c32, c22, c12= self._encoder(self.input[:,:,:,2:])
 
-        c4 = layers.concatenate([c41,c42])
-        c3 = layers.concatenate([c31,c32])
-        c2 = layers.concatenate([c21,c22])
-        c1 = layers.concatenate([c11,c12])
+        # c4 = layers.concatenate([c41,c42])
+        # c3 = layers.concatenate([c31,c32])
+        # c2 = layers.concatenate([c21,c22])
+        # c1 = layers.concatenate([c11,c12])
+        
+        c4 = self._bottleneck(c41,c42,256)
+        c3 = self._bottleneck(c31,c32,128)
+        c2 = self._bottleneck(c21,c22,64)
+        c1 = self._bottleneck(c11,c12,32)
 
-        bottleneck_features = self._bottleneck(output1, output2)
+        bottleneck_features = self._bottleneck(output1, output2,16)
         x = self._decoder(bottleneck_features, c4, c3, c2, c1)
 
         self._head(x)
