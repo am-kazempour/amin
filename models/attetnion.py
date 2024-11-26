@@ -1,6 +1,8 @@
 import tensorflow as tf
 from tensorflow.keras import layers, Model
 
+from unet import Unet
+
 class my_model:
 
     def __init__(
@@ -97,6 +99,41 @@ class my_model:
         else:
             self.output = layers.Activation('softmax')(x)
 
+class my_Unet(Unet):
+
+    def __init__(
+            self,
+            input_shape=(256,256,7),
+            num_filters=64,
+            class_num=1,
+            batch_norm=True,
+            encoder_num=1,
+            mri_input_shape=(256,256,2),
+            ct_input_shape=(256,256,5),):
+        
+        self.mri_input_shape = mri_input_shape
+        self.ct_input_shape = ct_input_shape
+        super().__init__(input_shape, num_filters, class_num, batch_norm, encoder_num)
+    
+    def _cross_attention(self,query, key, value):
+
+        attended_values = CrossAttentionLayer(units=512)([query, key, value])
+        return attended_values
+    
+    def _architecture(self):
+
+        output1, c41, c31, c21, c11= self._encoder(self.input[:,:,:,:2])
+        output2, c42, c32, c22, c12= self._encoder(self.input[:,:,:,2:])
+
+        c4 = layers.concatenate([c41,c42])
+        c3 = layers.concatenate([c31,c32])
+        c2 = layers.concatenate([c21,c22])
+        c1 = layers.concatenate([c11,c12])
+
+        bottleneck_features = self._bottleneck(output1, output2)
+        x = self._decoder(bottleneck_features, c4, c3, c2, c1)
+
+        self._head(x)
 
 class CrossAttentionLayer(layers.Layer):
     def __init__(self, units, **kwargs):
