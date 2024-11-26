@@ -1,6 +1,8 @@
 import tensorflow as tf
 from tensorflow.keras import layers, Model
 import tensorflow.keras.backend as K
+import tensorflow_wavelets.Layers.DWT as DWT
+
 class Unet:
     """
     Developed by Amin
@@ -339,7 +341,72 @@ class DeepLabv3(Unet):
             self.output = layers.Activation('sigmoid')(x)
         else:
             self.output = layers.Activation('softmax')(x)
+
+class Unet_skipBlock(Unet):
+
+    def __init__(self, input_shape=(256, 256, 7), num_filters=64, class_num=1, batch_norm=True, encoder_num=1):
+        self.depth1 = 32*2
+        self.depth2 = 48*2
+        self.depth3 = 64*2
+        self.depth4 = 80*2
+        self.depth5 = 128*2
+        self.depth6 = 144*2
+        self.depth7 = 160*2
+        super().__init__(input_shape, num_filters, class_num, batch_norm, encoder_num)
+    
+    def _encoder(self, input):
+        x = Block([self.depth1,self.depth1],dropout=0.25)(input)
+        skip = SkipBlock(filters = self.depth1,dropout=0.25)(input)
+        c1 = layers.Concatenate()([x,skip])
+
+        x = Block([self.depth2,self.depth3],dropout=0.25)(c1)
+        skip = SkipBlock(filters = self.depth3,dropout=0.25)(c1)
+        c2 = layers.Concatenate()([x,skip])
         
+        x = Block([self.depth4,self.depth5],dropout=0.25)(c2)
+        skip = SkipBlock(filters = self.depth5,dropout=0.25)(c2)
+        c3 = layers.Concatenate()([x,skip])
+        
+        x = Block([self.depth6,self.depth7],dropout=0.25)(c3)
+        skip = SkipBlock(filters = self.depth7,dropout=0.25)(c3)
+        c4 = layers.Concatenate()([x,skip])
+
+        return c4, c3, c2, c1
+
+    def _decoder(self, c4, c3, c2, c1):
+        x = Block([self.depth7,self.depth6],dropout=0.25,status="decoder")(c4)
+        skip = SkipBlock(filters = self.depth6,dropout=0.25,status="decoder")(c4)
+        x = layers.Concatenate()([x,skip])
+        out = layers.Concatenate()([x,c3])
+
+        x = Block([self.depth5,self.depth4],dropout=0.25,status="decoder")(out)
+        skip = SkipBlock(filters = self.depth4,dropout=0.25,status="decoder")(out)
+        x = layers.Concatenate()([x,skip])
+        out = layers.Concatenate()([x,c2])
+        
+        x = Block([self.depth3,self.depth2],dropout=0.25,status="decoder")(out)
+        skip = SkipBlock(filters = self.depth2,dropout=0.25,status="decoder")(out)
+        x = layers.Concatenate()([x,skip])
+        out = layers.Concatenate()([x,c1])
+        
+        x = Block([self.depth1,self.depth1],dropout=0.25,status="decoder")(out)
+        skip = SkipBlock(filters = self.depth1,dropout=0.25,status="decoder")(out)
+        out = layers.Concatenate()([x,skip])
+
+        return out
+
+    def _architecture(self):
+        c4, c3, c2, c1 = self._encoder(self.input)
+        x = self._decoder(c4, c3, c2, c1)
+        self.output = self._head(x)
+
+    def _head(self,input):
+        x = layers.Conv2D(self.class_num, (1, 1))(input)
+        if self.class_num == 1:
+            self.output = layers.Activation('sigmoid')(x)
+        else:
+            self.output = layers.Activation('softmax')(x)
+     
 class CustomPadding(layers.Layer):
     def call(self, input1,input2):
         if input1.shape[1] > input2.shape[1]:
@@ -376,3 +443,165 @@ class RollLayer(layers.Layer):
     
     def compute_output_shape(self, input_shape):
         return input_shape
+
+class Block(tf.keras.layers.Layer):
+    def __init__(self, filters,status="encoder", kernel_size = (3, 3), he = 'he_normal', w = 4, strides = 1, padding = 'same', activation = 'relu',dropout=0.1):
+        super(Block, self).__init__()
+        self.status = status
+        self.conv1 = layers.Conv2D(filters[0], kernel_size, strides=strides, padding=padding)#kernel_initializer=he, kernel_constraint=max_norm(w),
+        self.conv2 = layers.Conv2D(filters[1], kernel_size, strides=strides, padding=padding)# kernel_initializer=he, kernel_constraint=max_norm(w),
+        self.batch_norm1 = layers.BatchNormalization()
+        self.batch_norm2 = layers.BatchNormalization()
+        self.activation = layers.Activation(activation)
+        self.maxPooling = layers.MaxPooling2D()
+        self.upsample = layers.UpSampling2D(size=(2, 2))
+        self.dropout = layers.Dropout(dropout)
+        self.cbam = CBAM()
+
+    def call(self, inputs):
+        x = self.conv1(inputs)
+        x = self.activation(x)
+        
+        x = self.cbam(x)
+        
+        x = self.batch_norm1(x) 
+        x = self.conv2(x)
+        x = self.activation(x)
+        x = self.batch_norm2(x)
+        x = self.pad(x)
+        if self.status == "encoder":
+            x = self.maxPooling(x)
+        elif self.status == "decoder":
+            x = self.upsample(x)
+
+        
+
+        x = self.dropout(x)
+
+        return x
+    
+    def pad(self,input):
+        if input.shape[1] % 2 == 1:
+            input = tf.pad(input,[[0,0],[1,0],[0,0],[0,0]], "CONSTANT")
+        if input.shape[2] % 2 == 1:
+             input= tf.pad(input,[[0,0],[0,0],[1,0],[0,0]], "CONSTANT")
+        
+        return input
+        
+class CBAM(layers.Layer):
+    def __init__(self, ratio=8, **kwargs):
+        self.ratio = ratio
+        super(CBAM, self).__init__(**kwargs)
+
+    def build(self, input_shape):
+        self.channel_shared = layers.Dense(units=input_shape[-1] // self.ratio, activation='relu')
+        self.channel_weight = layers.Dense(units=input_shape[-1], activation='sigmoid')
+        self.spatial_weight = layers.Conv2D(filters=1, kernel_size=(7, 7), strides=(1, 1), padding='same', activation='sigmoid')
+        super(CBAM, self).build(input_shape)
+
+    def call(self, inputs):
+        # Channel-wise attention
+        channel_avg = layers.GlobalAveragePooling2D()(inputs)
+        channel_max = layers.GlobalMaxPooling2D()(inputs)
+        channel_concat = layers.Add()([channel_avg, channel_max])
+        channel_shared = self.channel_shared(channel_concat)
+        channel_attention = self.channel_weight(channel_shared)
+        channel_attention = layers.Multiply()([inputs, channel_attention])
+
+        # Spatial attention
+        spatial_avg = tf.reduce_mean(inputs, axis=-1, keepdims=True)
+        spatial_max = tf.reduce_max(inputs, axis=-1, keepdims=True)
+        spatial_concat = tf.concat([spatial_avg, spatial_max], axis=-1)
+        spatial_attention = self.spatial_weight(spatial_concat)
+        spatial_attention = layers.Multiply()([inputs, spatial_attention])
+
+        # Combine channel and spatial attention
+        attention = layers.Add()([channel_attention, spatial_attention])
+
+        return attention
+
+class IWT(layers.Layer):
+    def call(self, inputs):
+        in_shape = tf.shape(inputs)
+        batch_size = in_shape[0]
+        height = in_shape[1]
+        width = in_shape[2]
+        # the number of channels can't be unknown for the convolutions
+        n_channels = inputs.shape[3] // 4
+        outputs = tf.zeros([batch_size, 2 * height, 2 * width, n_channels])
+        # for now we only consider greyscale
+        x1 = inputs[..., 0:n_channels] / 2
+        x2 = inputs[..., n_channels:2*n_channels] / 2
+        x3 = inputs[..., 2*n_channels:3*n_channels] / 2
+        x4 = inputs[..., 3*n_channels:4*n_channels] / 2
+        # in the following, E denotes even and O denotes odd
+        x_EE = x1 - x2 - x3 + x4
+        x_OE = x1 - x2 + x3 - x4
+        x_EO = x1 + x2 - x3 - x4
+        x_OO = x1 + x2 + x3 + x4
+
+        # now the preparation to tensor_scatter_nd_add
+        height_range_E = 2 * tf.range(height)
+        height_range_O = height_range_E + 1
+        width_range_E = 2 * tf.range(width)
+        width_range_O = width_range_E + 1
+
+        # this transpose allows to only index the varying dimensions
+        # only the first dimensions can be indexed in tensor_scatter_nd_add
+        # we also need to match the indices with the updates reshaping
+        scatter_nd_perm = [2, 1, 3, 0]
+        outputs_reshaped = tf.transpose(outputs, perm=scatter_nd_perm)
+
+        combos_list = [
+            ((height_range_E, width_range_E), x_EE),
+            ((height_range_O, width_range_E), x_OE),
+            ((height_range_E, width_range_O), x_EO),
+            ((height_range_O, width_range_O), x_OO),
+        ]
+        for (height_range, width_range), x_comb in combos_list:
+            h_range, w_range = tf.meshgrid(height_range, width_range)
+            h_range = tf.reshape(h_range, (-1,))
+            w_range = tf.reshape(w_range, (-1,))
+            combo_indices = tf.stack([w_range, h_range], axis=-1)
+            combo_reshaped = tf.transpose(x_comb, perm=scatter_nd_perm)
+            outputs_reshaped =  tf.cond(
+                batch_size > 0,
+                lambda: tf.tensor_scatter_nd_add(
+                    outputs_reshaped,
+                    indices=combo_indices,
+                    updates=tf.reshape(combo_reshaped, (-1, n_channels, batch_size)),
+                ),
+                lambda: outputs_reshaped,
+            )
+
+        inverse_scatter_nd_perm = [3, 1, 0, 2]
+        outputs = tf.transpose(outputs_reshaped, perm=inverse_scatter_nd_perm)
+
+        return outputs
+
+class SkipBlock(layers.Layer):
+    def __init__(self,filters,status="encoder", kernel_size=(1, 1),he = 'he_normal', w = 4, strides=(1, 1), padding='same', activation='relu',dropout=0.1):
+        super(SkipBlock, self).__init__()
+        self.dwt = DWT.DWT(concat=0)
+        self.iwt = IWT()
+        self.status = status
+        self.cnn = layers.Conv2D(filters = filters, kernel_size=kernel_size, strides=strides, padding=padding)# kernel_initializer=he, kernel_constraint=max_norm(w),
+        self.cnn2 = layers.Conv2D(filters = filters, kernel_size=kernel_size, strides=strides, padding=padding)# kernel_initializer=he, kernel_constraint=max_norm(w),
+        self.batch_norm = layers.BatchNormalization()
+        self.activation = layers.Activation(activation)
+        self.dropout = layers.Dropout(dropout)
+    
+    def call(self,input):
+        
+        if self.status == "encoder":
+            x = self.cnn(input)
+            x = self.dwt(x)
+        elif self.status == "decoder":
+            x = self.cnn(input*2)
+            x = self.iwt(x)
+        
+        x = self.cnn2(x)
+        x = self.batch_norm(x)
+        x = self.activation(x)
+        x = self.dropout(x)
+        return x
