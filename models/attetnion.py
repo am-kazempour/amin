@@ -131,6 +131,14 @@ class my_Unet(Unet):
         combined = layers.Reshape((size, size, 512))(combined)  # Reshape back to spatial format
         return combined
 
+    def _decoder(self,input):
+        x = input
+        fillters = 512
+        for _ in range(5):
+            x = layers.UpSampling2D(size=(2, 2))(x)
+            x = self.conv_block(x,filters=fillters)
+            fillters //= 2
+
     def _architecture(self):
 
         output1, c41, c31, c21, c11= self._encoder(self.input[:,:,:,:2])
@@ -141,13 +149,13 @@ class my_Unet(Unet):
         # c2 = layers.concatenate([c21,c22])
         # c1 = layers.concatenate([c11,c12])
         
-        c4 = self._bottleneck(c41,c42,32)
-        c3 = self._bottleneck(c31,c32,64)
-        c2 = self._bottleneck(c21,c22,128)
-        c1 = self._bottleneck(c11,c12,256)
+        # c4 = self._bottleneck(c41,c42,32)
+        # c3 = self._bottleneck(c31,c32,64)
+        # c2 = self._bottleneck(c21,c22,128)
+        # c1 = self._bottleneck(c11,c12,256)
 
         bottleneck_features = self._bottleneck(output1, output2,16)
-        x = self._decoder(bottleneck_features, c4, c3, c2, c1)
+        x = self._decoder(bottleneck_features)#, c4, c3, c2, c1)
 
         self._head(x)
 
