@@ -398,6 +398,7 @@ class Unet_skipBlock(Unet):
     def _architecture(self):
         c4, c3, c2, c1 = self._encoder(self.input)
         x = self._decoder(c4, c3, c2, c1)
+        print(x)
         self.output = self._head(x)
      
 class CustomPadding(layers.Layer):
