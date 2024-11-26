@@ -575,8 +575,11 @@ class IWT(layers.Layer):
 class SkipBlock(layers.Layer):
     def __init__(self,filters,status="encoder", kernel_size=(1, 1),he = 'he_normal', w = 4, strides=(1, 1), padding='same', activation='relu',dropout=0.1):
         super(SkipBlock, self).__init__()
+        print(1)
         self.dwt = DWT.DWT(concat=0)
+        print(2)
         self.iwt = IWT()
+        print(3)
         self.status = status
         self.cnn = layers.Conv2D(filters = filters, kernel_size=kernel_size, strides=strides, padding=padding)# kernel_initializer=he, kernel_constraint=max_norm(w),
         self.cnn2 = layers.Conv2D(filters = filters, kernel_size=kernel_size, strides=strides, padding=padding)# kernel_initializer=he, kernel_constraint=max_norm(w),
