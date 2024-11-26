@@ -134,7 +134,7 @@ class my_Unet(Unet):
     def _decoder(self,input):
         x = input
         fillters = 512
-        for _ in range(5):
+        for _ in range(4):
             x = layers.UpSampling2D(size=(2, 2))(x)
             x = self.conv_block(x,filters=fillters)
             fillters //= 2
