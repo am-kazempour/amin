@@ -344,7 +344,7 @@ class DeepLabv3(Unet):
 
 class Unet_skipBlock(Unet):
 
-    def __init__(self, input_shape=(256, 256, 7), num_filters=64, class_num=1, batch_norm=True, encoder_num=1):
+    def __init__(self, input_shape=(256, 256, 7), num_filters=64, class_num=1, batch_norm=True, encoder_num=1,dropout=0.25):
         self.depth1 = 32*2
         self.depth2 = 48*2
         self.depth3 = 64*2
@@ -352,45 +352,58 @@ class Unet_skipBlock(Unet):
         self.depth5 = 128*2
         self.depth6 = 144*2
         self.depth7 = 160*2
+
+        self.dropout = dropout
+
+        self.encoder_skip1 = SkipBlock(filters = self.depth1,dropout=self.dropout,status="encoder")
+        self.encoder_skip2 = SkipBlock(filters = self.depth3,dropout=self.dropout,status="encoder")
+        self.encoder_skip3 = SkipBlock(filters = self.depth5,dropout=self.dropout,status="encoder")
+        self.encoder_skip4 = SkipBlock(filters = self.depth7,dropout=self.dropout,status="encoder")
+
+        self.decoder_skip1 = SkipBlock(filters = self.depth6,dropout=self.dropout,status="decoder")
+        self.decoder_skip2 = SkipBlock(filters = self.depth4,dropout=self.dropout,status="decoder")
+        self.decoder_skip3 = SkipBlock(filters = self.depth2,dropout=self.dropout,status="decoder")
+        self.decoder_skip4 = SkipBlock(filters = self.depth1,dropout=self.dropout,status="decoder")
+
         super().__init__(input_shape, num_filters, class_num, batch_norm, encoder_num)
     
     def _encoder(self, input):
         x = Block([self.depth1,self.depth1],dropout=0.25)(input)
-        skip = SkipBlock(filters = self.depth1,dropout=0.25)(input)
+        skip = self.encoder_skip1(input)
         c1 = layers.Concatenate()([x,skip])
         print(c1.shape)
         x = Block([self.depth2,self.depth3],dropout=0.25)(c1)
-        skip = SkipBlock(filters = self.depth3,dropout=0.25)(c1)
+        skip = self.encoder_skip2(c1)
         c2 = layers.Concatenate()([x,skip])
         print(c2.shape)
         x = Block([self.depth4,self.depth5],dropout=0.25)(c2)
-        skip = SkipBlock(filters = self.depth5,dropout=0.25)(c2)
+        skip = self.encoder_skip3(c2)
         c3 = layers.Concatenate()([x,skip])
         print(c3.shape)
         x = Block([self.depth6,self.depth7],dropout=0.25)(c3)
-        skip = SkipBlock(filters = self.depth7,dropout=0.25)(c3)
+        skip = self.encoder_skip4(c3)
         c4 = layers.Concatenate()([x,skip])
         print(c4.shape)
         return c4, c3, c2, c1
 
     def _decoder(self, c4, c3, c2, c1):
         x = Block([self.depth7,self.depth6],dropout=0.25,status="decoder")(c4)
-        skip = SkipBlock(filters = self.depth6,dropout=0.25,status="decoder")(c4)
+        skip =  self.decoder_skip1(c4)
         x = layers.Concatenate()([x,skip])
         out = layers.Concatenate()([x,c3])
         print(out.shape)
         x = Block([self.depth5,self.depth4],dropout=0.25,status="decoder")(out)
-        skip = SkipBlock(filters = self.depth4,dropout=0.25,status="decoder")(out)
+        skip =  self.decoder_skip2(out)
         x = layers.Concatenate()([x,skip])
         out = layers.Concatenate()([x,c2])
         print(out.shape)
         x = Block([self.depth3,self.depth2],dropout=0.25,status="decoder")(out)
-        skip = SkipBlock(filters = self.depth2,dropout=0.25,status="decoder")(out)
+        skip =  self.decoder_skip3(out)
         x = layers.Concatenate()([x,skip])
         out = layers.Concatenate()([x,c1])
         print(out.shape)
         x = Block([self.depth1,self.depth1],dropout=0.25,status="decoder")(out)
-        skip = SkipBlock(filters = self.depth1,dropout=0.25,status="decoder")(out)
+        skip =  self.decoder_skip4(out)
         out = layers.Concatenate()([x,skip])
         print(out.shape)
         return out
@@ -575,11 +588,8 @@ class IWT(layers.Layer):
 class SkipBlock(layers.Layer):
     def __init__(self,filters,status="encoder", kernel_size=(1, 1),he = 'he_normal', w = 4, strides=(1, 1), padding='same', activation='relu',dropout=0.1):
         super(SkipBlock, self).__init__()
-        print(1)
         self.dwt = DWT.DWT(concat=0)
-        print(2)
         self.iwt = IWT()
-        print(3)
         self.status = status
         self.cnn = layers.Conv2D(filters = filters, kernel_size=kernel_size, strides=strides, padding=padding)# kernel_initializer=he, kernel_constraint=max_norm(w),
         self.cnn2 = layers.Conv2D(filters = filters, kernel_size=kernel_size, strides=strides, padding=padding)# kernel_initializer=he, kernel_constraint=max_norm(w),
