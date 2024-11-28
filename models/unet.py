@@ -369,22 +369,22 @@ class Unet_skipBlock(Unet):
     
     def _encoder(self, input):
         x = Block([self.depth1,self.depth1],dropout=0.25)(input)
-        skip = self.encoder_skip1(input)
+        skip = skips(filters = self.depth1,dropout=self.dropout,status="encoder")(input)#self.encoder_skip1(input)
         c1 = layers.Concatenate()([x,skip])
         print(c1.shape)
         x = Block([self.depth2,self.depth3],dropout=0.25)(c1)
-        skip = self.encoder_skip2(c1)
+        skip = skips(filters = self.depth3,dropout=self.dropout,status="encoder")(c1)#self.encoder_skip2(c1)
         c2 = layers.Concatenate()([x,skip])
         print(c2.shape)
         x = Block([self.depth4,self.depth5],dropout=0.25)(c2)
-        skip = self.encoder_skip3(c2)
+        skip = skips(filters = self.depth5,dropout=self.dropout,status="encoder")(c2)#self.encoder_skip3(c2)
         c3 = layers.Concatenate()([x,skip])
         print(c3.shape)
         x = Block([self.depth6,self.depth7],dropout=0.25)(c3)
-        # skip = self.encoder_skip4(c3)
-        # c4 = layers.Concatenate()([x,skip])
-        print(x.shape)
-        return x, c3, c2, c1
+        skip = skips(filters = self.depth7,dropout=self.dropout,status="encoder")(c3)#self.encoder_skip4(c3)
+        c4 = layers.Concatenate()([x,skip])
+        print(c4.shape)
+        return c4, c3, c2, c1
 
     def _decoder(self, c4, c3, c2, c1):
         x = Block([self.depth7,self.depth6],dropout=0.25,status="decoder")(c4)
@@ -584,6 +584,9 @@ class IWT(layers.Layer):
         outputs = tf.transpose(outputs_reshaped, perm=inverse_scatter_nd_perm)
 
         return outputs
+
+def skips(input,filters,status,dropout):
+    return SkipBlock(filters = filters,dropout=dropout,status=status)(input)
 
 class SkipBlock(layers.Layer):
     def __init__(self,filters,status="encoder", kernel_size=(1, 1),he = 'he_normal', w = 4, strides=(1, 1), padding='same', activation='relu',dropout=0.1):
