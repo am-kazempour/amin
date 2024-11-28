@@ -368,12 +368,12 @@ class Unet_skipBlock(Unet):
         super().__init__(input_shape, num_filters, class_num, batch_norm, encoder_num)
     
     def _encoder(self, input):
-        x = Block([self.depth1,self.depth1],dropout=0.25)(input)
+        c1 = Block([self.depth1,self.depth1],dropout=0.25)(input)
         # skip = skips(input,filters = self.depth1,dropout=self.dropout,status="encoder")#self.encoder_skip1(input)
         # c1 = layers.Concatenate()([x,skip])
         # print(c1.shape)
-        x = Block([self.depth2,self.depth3],dropout=0.25)(x)
-        skip = skips(x,filters = self.depth3,dropout=self.dropout,status="encoder")#self.encoder_skip2(c1)
+        x = Block([self.depth2,self.depth3],dropout=0.25)(c1)
+        skip = skips(c1,filters = self.depth3,dropout=self.dropout,status="encoder")#self.encoder_skip2(c1)
         c2 = layers.Concatenate()([x,skip])
         print(c2.shape)
         x = Block([self.depth4,self.depth5],dropout=0.25)(c2)
@@ -384,7 +384,7 @@ class Unet_skipBlock(Unet):
         skip = skips(c3,filters = self.depth7,dropout=self.dropout,status="encoder")#self.encoder_skip4(c3)
         c4 = layers.Concatenate()([x,skip])
         print(c4.shape)
-        return c4, c3, c2, x
+        return c4, c3, c2, c1
 
     def _decoder(self, c4, c3, c2, c1):
         x = Block([self.depth7,self.depth6],dropout=0.25,status="decoder")(c4)
