@@ -19,20 +19,25 @@ class yolov8:
       self.input_shape = input_shape
       self.input = Input(self.input_shape)
       self.class_num =class_num
-      self.__set_type(type)
+      self._set_type(type)
       self.load_backbone()
-      self.__decoder()
+      self._decoder()
     
-    def __set_type(self,type):
+    def _set_type(self,type):
       paramet = {
-        "n" : [0.33,0.25,2,1]
+        "n" : [0.33,0.25,2,1],
+        "x" : [1,1.25,1,3],
+      }
+      self.type_name = {
+         "n" : "yolo_v8_xs_backbone_coco",
+         "x" : "yolo_v8_xl_backbone_coco",
       }
       self.d,self.w,self.r,self.n = paramet[type]
 
     def load_backbone(self):
         
         backbone_yolo = keras_cv.models.YOLOV8Backbone.from_preset(
-            "yolo_v8_xs_backbone_coco"
+            self.type_name
         )
         
         intermediate_model = tf.keras.models.clone_model(
@@ -45,7 +50,7 @@ class yolov8:
         
         self.intermediate_model = intermediate_model
 
-    def __decoder(self):
+    def _decoder(self):
       x = UpSampling2D()(self.intermediate_model.layers[-1].output)
       x = Concatenate()([self.intermediate_model.get_layer("stack3_c2f_output").output,x])
       c2f_2_1 = self.c2f(x,int(540*self.w),self.n)
@@ -143,3 +148,5 @@ class yolov8:
             mask = Activation('softmax')(mask)
       
         return mask
+    
+# class bos
