@@ -21,7 +21,7 @@ def my_Exp_loss(y_true,y_pred):
 def my_Exp_w_loss(y_true,y_pred):
     y_p = tf.argmax(y_pred,axis=-1)
     y_p = tf.keras.utils.to_categorical(y_p,num_classes=y_pred.shape[-1])
-    false_pos = 5*tf.math.exp(y_pred[y_p*(1-y_true) == 1])
-    false_neg = 5*tf.math.exp(-y_pred[(1-y_p)*y_true == 1])
+    false_pos = 3*tf.math.exp(y_pred[y_p*(1-y_true) == 1])
+    false_neg = 3*tf.math.exp(-y_pred[(1-y_p)*y_true == 1])
     l = tf.concat([tf.math.exp(y_pred[y_true==0]),tf.math.exp(-y_pred[y_true==1])],axis=0)
     return tf.reduce_mean(tf.concat([false_pos,false_neg,l],axis=0))
