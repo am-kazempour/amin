@@ -384,7 +384,7 @@ class Unet_skipBlock(Unet):
         skip = skips(c3,filters = self.depth7,dropout=self.dropout,status="encoder")#self.encoder_skip4(c3)
         c4 = layers.Concatenate()([x,skip])
         print(c4.shape)
-        return c4, c3, c2, c1
+        return c4, c3, c2, x
 
     def _decoder(self, c4, c3, c2, c1):
         x = Block([self.depth7,self.depth6],dropout=0.25,status="decoder")(c4)
