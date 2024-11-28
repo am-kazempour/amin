@@ -31,7 +31,7 @@ class yolov8:
       self.type_name = {
          "n" : "yolo_v8_xs_backbone_coco",
          "x" : "yolo_v8_xl_backbone_coco",
-      }
+      }[type]
       self.d,self.w,self.r,self.n = paramet[type]
 
     def load_backbone(self):
