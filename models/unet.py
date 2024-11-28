@@ -369,19 +369,19 @@ class Unet_skipBlock(Unet):
     
     def _encoder(self, input):
         x = Block([self.depth1,self.depth1],dropout=0.25)(input)
-        skip = skips(filters = self.depth1,dropout=self.dropout,status="encoder")(input)#self.encoder_skip1(input)
+        skip = skips(input,filters = self.depth1,dropout=self.dropout,status="encoder")#self.encoder_skip1(input)
         c1 = layers.Concatenate()([x,skip])
         print(c1.shape)
         x = Block([self.depth2,self.depth3],dropout=0.25)(c1)
-        skip = skips(filters = self.depth3,dropout=self.dropout,status="encoder")(c1)#self.encoder_skip2(c1)
+        skip = skips(c1,filters = self.depth3,dropout=self.dropout,status="encoder")#self.encoder_skip2(c1)
         c2 = layers.Concatenate()([x,skip])
         print(c2.shape)
         x = Block([self.depth4,self.depth5],dropout=0.25)(c2)
-        skip = skips(filters = self.depth5,dropout=self.dropout,status="encoder")(c2)#self.encoder_skip3(c2)
+        skip = skips(c2,filters = self.depth5,dropout=self.dropout,status="encoder")#self.encoder_skip3(c2)
         c3 = layers.Concatenate()([x,skip])
         print(c3.shape)
         x = Block([self.depth6,self.depth7],dropout=0.25)(c3)
-        skip = skips(filters = self.depth7,dropout=self.dropout,status="encoder")(c3)#self.encoder_skip4(c3)
+        skip = skips(c3,filters = self.depth7,dropout=self.dropout,status="encoder")#self.encoder_skip4(c3)
         c4 = layers.Concatenate()([x,skip])
         print(c4.shape)
         return c4, c3, c2, c1
