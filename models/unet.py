@@ -355,61 +355,66 @@ class Unet_skipBlock(Unet):
 
         self.dropout = dropout
 
-        self.encoder_skip1 = SkipBlock(filters = self.depth1,dropout=self.dropout,status="encoder")
-        self.encoder_skip2 = SkipBlock(filters = self.depth3,dropout=self.dropout,status="encoder")
-        self.encoder_skip3 = SkipBlock(filters = self.depth5,dropout=self.dropout,status="encoder")
-        self.encoder_skip4 = SkipBlock(filters = self.depth7,dropout=self.dropout,status="encoder")
+        # self.encoder_skip1 = SkipBlock(filters = self.depth1,dropout=self.dropout,status="encoder")
+        # self.encoder_skip2 = SkipBlock(filters = self.depth3,dropout=self.dropout,status="encoder")
+        # self.encoder_skip3 = SkipBlock(filters = self.depth5,dropout=self.dropout,status="encoder")
+        # self.encoder_skip4 = SkipBlock(filters = self.depth7,dropout=self.dropout,status="encoder")
 
-        self.decoder_skip1 = SkipBlock(filters = self.depth6,dropout=self.dropout,status="decoder")
-        self.decoder_skip2 = SkipBlock(filters = self.depth4,dropout=self.dropout,status="decoder")
-        self.decoder_skip3 = SkipBlock(filters = self.depth2,dropout=self.dropout,status="decoder")
-        self.decoder_skip4 = SkipBlock(filters = self.depth1,dropout=self.dropout,status="decoder")
+        # self.decoder_skip1 = SkipBlock(filters = self.depth6,dropout=self.dropout,status="decoder")
+        # self.decoder_skip2 = SkipBlock(filters = self.depth4,dropout=self.dropout,status="decoder")
+        # self.decoder_skip3 = SkipBlock(filters = self.depth2,dropout=self.dropout,status="decoder")
+        # self.decoder_skip4 = SkipBlock(filters = self.depth1,dropout=self.dropout,status="decoder")
 
         super().__init__(input_shape, num_filters, class_num, batch_norm, encoder_num)
     
     def _encoder(self, input):
         x = Block([self.depth1,self.depth1],dropout=0.25)(input)
-        skip = self.encoder_skip1(input)
+        skip = SkipBlock(filters = self.depth1,dropout=self.dropout,status="encoder")
         c1 = layers.Concatenate()([x,skip])
-        print(c1.shape)
         x = Block([self.depth2,self.depth3],dropout=0.25)(c1)
-        skip = self.encoder_skip2(c1)
+        skip = SkipBlock(filters = self.depth3,dropout=self.dropout,status="encoder")
         c2 = layers.Concatenate()([x,skip])
-        print(c2.shape)
         x = Block([self.depth4,self.depth5],dropout=0.25)(c2)
-        skip = self.encoder_skip3(c2)
+        skip = SkipBlock(filters = self.depth5,dropout=self.dropout,status="encoder")
         c3 = layers.Concatenate()([x,skip])
-        print(c3.shape)
         x = Block([self.depth6,self.depth7],dropout=0.25)(c3)
-        skip = self.encoder_skip4(c3)
+        skip = SkipBlock(filters = self.depth7,dropout=self.dropout,status="encoder")
         c4 = layers.Concatenate()([x,skip])
-        print(c4.shape)
         return c4, c3, c2, c1
 
     def _decoder(self, c4, c3, c2, c1):
         x = Block([self.depth7,self.depth6],dropout=0.25,status="decoder")(c4)
-        skip =  self.decoder_skip1(c4)
+        skip =  SkipBlock(filters = self.depth6,dropout=self.dropout,status="decoder")
         x = layers.Concatenate()([x,skip])
         out = layers.Concatenate()([x,c3])
-        print(out.shape)
         x = Block([self.depth5,self.depth4],dropout=0.25,status="decoder")(out)
-        skip =  self.decoder_skip2(out)
+        skip =  SkipBlock(filters = self.depth4,dropout=self.dropout,status="decoder")
         x = layers.Concatenate()([x,skip])
         out = layers.Concatenate()([x,c2])
-        print(out.shape)
         x = Block([self.depth3,self.depth2],dropout=0.25,status="decoder")(out)
-        skip =  self.decoder_skip3(out)
+        skip =  SkipBlock(filters = self.depth2,dropout=self.dropout,status="decoder")
         x = layers.Concatenate()([x,skip])
         out = layers.Concatenate()([x,c1])
-        print(out.shape)
         x = Block([self.depth1,self.depth1],dropout=0.25,status="decoder")(out)
-        skip =  self.decoder_skip4(out)
+        skip =  SkipBlock(filters = self.depth1,dropout=self.dropout,status="decoder")
         out = layers.Concatenate()([x,skip])
-        print(out.shape)
         return out
+
+    def _bottleneck(self,input,activation='relu'):
+        x = layers.Conv2D(self.depth7*2, (3, 3), padding='same')(input)
+        if self.batch_norm:
+            x = layers.BatchNormalization()(x)
+        x = layers.Activation(activation)(x)
+        x = layers.Conv2D(self.depth7*2, (3, 3),  padding='same')(x)
+        if self.batch_norm:
+            x = layers.BatchNormalization()(x)
+        x = layers.Activation(activation)(x)
+        return x
 
     def _architecture(self):
         c4, c3, c2, c1 = self._encoder(self.input)
+        bottel = self._bottleneck(c4)
+        c4 = layers.Concatenate()([bottel,c4])
         x = self._decoder(c4, c3, c2, c1)
         self._head(x)
      
@@ -602,9 +607,7 @@ class SkipBlock(layers.Layer):
         
         if self.status == "encoder":
             x = self.cnn(input) #64
-            
             x = DWT.DWT(concat=0)(x)
-           
         elif self.status == "decoder":
             x = self.cnn(input)
             x = self.iwt(x)
