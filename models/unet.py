@@ -596,7 +596,7 @@ class SkipBlock(layers.Layer):
         self.batch_norm = layers.BatchNormalization()
         self.activation = layers.Activation(activation)
         self.dropout = layers.Dropout(dropout)
-        self.max = layers.Maxpooling2D(2)
+        self.max = layers.MaxPooling2D(2)
     
     def call(self,input):
         
