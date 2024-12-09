@@ -600,9 +600,10 @@ class SkipBlock(layers.Layer):
     def call(self,input):
         
         if self.status == "encoder":
-            x = self.cnn(input)
+            x = self.cnn(input) #64
             print(x.shape)
             x = self.dwt(x)
+            print(x.shape)
         elif self.status == "decoder":
             x = self.cnn(input)
             x = self.iwt(x)
