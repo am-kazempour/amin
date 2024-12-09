@@ -596,13 +596,14 @@ class SkipBlock(layers.Layer):
         self.batch_norm = layers.BatchNormalization()
         self.activation = layers.Activation(activation)
         self.dropout = layers.Dropout(dropout)
+        self.max = layers.Maxpooling2D(2)
     
     def call(self,input):
         
         if self.status == "encoder":
             x = self.cnn(input) #64
             print(x.shape)
-            x = self.dwt(x)
+            x = self.max(x)
             print(x.shape)
         elif self.status == "decoder":
             x = self.cnn(input)
