@@ -81,7 +81,7 @@ class TransUnet:
         y = SegmentationHead(num_classes=num_classes, final_act=final_act)(y)
 
         # Build Model
-        self._model =  tf.keras.layers.models.Model(inputs=x, outputs=y, name=name)
+        self._model =  tf.keras.models.Model(inputs=x, outputs=y, name=name)
 
     def model(self):
         return self._model
