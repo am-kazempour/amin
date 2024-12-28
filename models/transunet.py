@@ -245,7 +245,7 @@ class Conv2DReLu(tf.keras.layers.Layer):
     def build(self, input_shape):
         self.conv = tf.keras.layers.Conv2D(
             filters=self.filters, kernel_size=self.kernel_size, strides=self.strides,
-            padding=self.padding, use_bias=False, kernel_regularizer=tfk.regularizers.L2(L2_WEIGHT_DECAY), 
+            padding=self.padding, use_bias=False, kernel_regularizer=tf.keras.regularizers.L2(L2_WEIGHT_DECAY), 
             kernel_initializer="lecun_normal")
 
         self.bn = tf.keras.layers.BatchNormalization(momentum=0.9, epsilon=1e-5)
