@@ -32,7 +32,7 @@ class TransUnet:
             if patch_size == 0:
                 patch_size = 1
 
-            resnet50v2, features = resnet_embeddings(x, input_shape=input_shape, n_skip=n_skip, pretrain=pretrain)
+            resnet50v2, features = resnet_embeddings(x, input_shape=input_shape, n_skip=n_skip)
             if freeze_enc_cnn:
                 resnet50v2.trainable = False
             y = resnet50v2.get_layer("conv4_block6_preact_relu").output
