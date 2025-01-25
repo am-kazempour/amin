@@ -11,7 +11,7 @@ def Exp_loss(y_true, y_pred):
     # y_pred = tf.nn.softmax(y_pred)
     true = tf.math.exp(-1*tf.math.multiply(y_true, y_pred))
     wrong = tf.math.exp(-1*tf.math.multiply((1-y_true), 1-y_pred))
-    loss = tf.reduce_mean(true+wrong) 
+    loss = tf.reduce_mean(true+wrong)
     
     return loss
 

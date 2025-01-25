@@ -8,13 +8,14 @@ class Unet:
     Developed by Amin
     
     """
-    def __init__(self,input_shape=(256,256, 3),num_filters=64,class_num=1,batch_norm=True,encoder_num=1):
+    def __init__(self,input_shape=(256,256, 3),num_filters=64,class_num=1,batch_norm=True,encoder_num=1,repetition=1):
         self.input_shape = input_shape
         self.input = layers.Input(self.input_shape)
         self.num_filters = num_filters
         self.class_num = class_num
         self.batch_norm = batch_norm
         self.encoder_num = encoder_num
+        self.repetition = repetition
         self._architecture()
 
     def model(self):
@@ -39,16 +40,16 @@ class Unet:
 
     def _encoder(self,input):
 
-        c1 = self.conv_block(input,self.num_filters)
+        c1 = self.conv_block(input,self.num_filters,repetition = self.repetition)
         x = layers.MaxPooling2D((2, 2))(c1)
 
-        c2 = self.conv_block(x, self.num_filters*2)
+        c2 = self.conv_block(x, self.num_filters*2,repetition = self.repetition)
         x = layers.MaxPooling2D((2, 2))(c2)
         
-        c3 = self.conv_block(x, self.num_filters*4)
+        c3 = self.conv_block(x, self.num_filters*4,repetition = self.repetition)
         x = layers.MaxPooling2D((2, 2))(c3)
         
-        c4 = self.conv_block(x, self.num_filters*8)
+        c4 = self.conv_block(x, self.num_filters*8,repetition = self.repetition)
         x = layers.MaxPooling2D((2, 2))(c4)
         
         return x, c4, c3, c2, c1
@@ -87,9 +88,9 @@ class Unet:
     def conv_block(self,x, filters, kernel_size=3, activation='relu',repetition=2):
         for _ in range(repetition):
             x = layers.Conv2D(filters, kernel_size, padding='same')(x)
-            if self.batch_norm:
-                x = layers.BatchNormalization()(x)
             x = layers.Activation(activation)(x)
+        if self.batch_norm:
+            x = layers.BatchNormalization()(x)
         return x
 
     def _head(self,input):
