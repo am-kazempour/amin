@@ -593,6 +593,7 @@ class IWT(layers.Layer):
 
 class SkipBlock(layers.Layer):
     def __init__(self,filters,status="encoder", kernel_size=(1, 1),he = 'he_normal', w = 4, strides=(1, 1), padding='same', activation='relu',dropout=0.1):
+        
         super(SkipBlock, self).__init__()
         self.dwt = DWT.DWT(concat=0)
         self.iwt = IWT()
