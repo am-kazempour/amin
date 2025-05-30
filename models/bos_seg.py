@@ -17,12 +17,3 @@ class bos_seg_Unet(Unet):
         for _ in range(self.decoder_num):
             x.append(self._head(self._decoder(output, c4, c3, c2, c1)))
         self.output = layers.concatenate(x)
-    
-    def _head(self,input):
-        x = layers.Conv2D(self.class_num, (1, 1))(input)
-        if self.class_num == 1:
-            output = layers.Activation('sigmoid')(x)
-        else:
-            output = layers.Activation('softmax')(x)
-        
-        return output
